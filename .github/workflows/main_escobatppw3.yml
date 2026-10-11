@@ -23,18 +23,21 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Build with dotnet
-        run: dotnet build --configuration Release
+      - name: Restore dependencies
+        run: dotnet restore Truco.NET/Truco.NET.csproj
+     
+      - name: Build web project
+        run: dotnet build Truco.NET/Truco.NET.csproj --configuration Release --no-restore
 
-      - name: dotnet publish
-        run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
+      - name: Publish web project
+        run: dotnet publish Truco.NET/Truco.NET.csproj --configuration Release --no-build --output "${{ runner.temp }}/myapp"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
-
+          path: ${{ runner.temp }}/myapp/
+          
   deploy:
     runs-on: ubuntu-latest
     needs: build
@@ -47,6 +50,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: .net-app
+          path: ./publish
       
       - name: Login to Azure
         uses: azure/login@v2
@@ -61,5 +65,5 @@ jobs:
         with:
           app-name: 'escobatppw3'
           slot-name: 'Production'
-          package: .
+          package: ./publish
           
