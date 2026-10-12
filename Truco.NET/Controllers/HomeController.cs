@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.V4.Pages.Account.Internal;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
-using Truco.Net.Servicios;
+using Truco.Net.Logica;
 using Truco.NET.Models;
 using Truco.Net.Entidades;
 

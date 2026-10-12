@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace Truco.Net.Servicios.Controllers
+namespace Truco.Net.Logica.Controllers
 {
     [ApiController]
     [Route("[controller]")]

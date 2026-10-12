@@ -3,6 +3,6 @@
     <File Path=".gitignore" />
   </Folder>
   <Project Path="Truco.Net.Entidades/Truco.Net.Entidades.csproj" Id="d4365b82-082a-407a-b28d-b7fd2313fa9f" />
-  <Project Path="Truco.Net.Servicios/Truco.Net.Logica.csproj" Id="5d1b7c8e-01c1-4e31-9971-bd5266c709bd" />
+  <Project Path="Truco.Net.Logica/Truco.Net.Logica.csproj" Id="611f5f5c-e065-415f-87c4-d91004e9bf1e" />
   <Project Path="Truco.NET/Truco.NET.csproj" />
 </Solution>

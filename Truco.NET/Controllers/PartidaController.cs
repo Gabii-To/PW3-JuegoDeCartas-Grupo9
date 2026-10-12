@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Truco.Net.Logica.Servicios;
+using Truco.Net.Logica;
 using Truco.Net.Models;
 
 namespace Truco.Net.Controllers

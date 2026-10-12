@@ -1,4 +1,4 @@
-namespace Truco.Net.Servicios
+namespace Truco.Net.Logica
 {
     public class WeatherForecast
     {

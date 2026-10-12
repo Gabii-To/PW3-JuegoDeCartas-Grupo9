@@ -1,4 +1,4 @@
-using Truco.Net.Servicios;
+using Truco.Net.Logica;
 
 var builder = WebApplication.CreateBuilder(args);
 

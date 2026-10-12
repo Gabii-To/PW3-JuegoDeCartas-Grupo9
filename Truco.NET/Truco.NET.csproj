@@ -16,7 +16,7 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Truco.Net.Entidades\Truco.Net.Entidades.csproj" />
-	  <ProjectReference Include="..\Truco.Net.Servicios\Truco.Net.Logica.csproj" />
+	  <ProjectReference Include="..\Truco.Net.Logica\Truco.Net.Logica.csproj" />
 	</ItemGroup>
 
 </Project>

@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Truco.Net.Servicios;
+using Truco.Net.Logica;
 using Truco.NET.Data;
-using Truco.Net.Logica.Servicios;
 
 var builder = WebApplication.CreateBuilder(args);
 

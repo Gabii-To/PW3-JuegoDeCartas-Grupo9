@@ -12,14 +12,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Update="appsettings.json"
-				 CopyToPublishDirectory="Never" />
-		<Content Update="appsettings.Development.json"
-				 CopyToPublishDirectory="Never" />
+		<Content Update="appsettings.json" CopyToPublishDirectory="Never" />
+		<Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\Truco.Net.Entidades\Truco.Net.Entidades.csproj" />
+		<ProjectReference Include="..\Truco.Net.Logica\Truco.Net.Logica.csproj" />
 	</ItemGroup>
 
 </Project>
