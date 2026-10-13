@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-using Truco.Net.Models;
+using Truco.Net.Entidades;
 
 namespace Truco.Net.Logica
 {

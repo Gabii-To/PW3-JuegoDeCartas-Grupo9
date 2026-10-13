@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Truco.Net.Models
+namespace Truco.Net.Entidades
 {
     public class Partida
     {

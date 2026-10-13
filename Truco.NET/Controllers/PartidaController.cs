@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Truco.Net.Logica;
-using Truco.Net.Models;
+using Truco.Net.Entidades;
 
 namespace Truco.Net.Controllers
 {
