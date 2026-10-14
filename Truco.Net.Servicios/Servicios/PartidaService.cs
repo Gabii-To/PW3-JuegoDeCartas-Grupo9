@@ -36,6 +36,14 @@ namespace Truco.Net.Logica.Servicios
 
         public Partida CrearPartida(string nombrePartida, string modo, string nombreCreador)
         {
+            // Se busca si hay una partida activa con el mismo creador, para no hacer mesas fantasmas
+            var partidasAnteriores = _partidas.Where(p => p.Creador != null && p.Creador.Nombre == nombreCreador).ToList();
+            foreach (var partidaAntigua in partidasAnteriores)
+            {
+                _partidas.Remove(partidaAntigua);
+            }
+
+            
             var creador = new Jugador
             {
                 Id = _nextJugadorId++,
@@ -56,11 +64,16 @@ namespace Truco.Net.Logica.Servicios
             return nuevaPartida;
         }
 
-        // Método de ejemplo para cuando un jugador se une a una partida existente
         public async Task<bool> UnirseAPartidaAsync(int partidaId, string nombreJugador)
         {
             var partida = _partidas.FirstOrDefault(p => p.Id == partidaId);
             if (partida == null) return false;
+
+            // Evitar duplicar si ya está en la lista de jugadores de la memoria
+            if (partida.Jugadores.Any(j => j.Nombre == nombreJugador))
+            {
+                return true;
+            }
 
             var nuevoJugador = new Jugador
             {
@@ -71,11 +84,37 @@ namespace Truco.Net.Logica.Servicios
             partida.Jugadores.Add(nuevoJugador);
             partida.JugadoresActuales = partida.Jugadores.Count;
 
-            // Notifica en tiempo real a todos los miembros de este grupo (partida) en SignalR
-            await _hubContext.Clients.Group($"partida_{partida.Id}")
+            // CORRECCIÓN: Usar exactamente el mismo formato de grupo que en el Hub (ej: partida.Id.ToString())
+            await _hubContext.Clients.Group(partida.Id.ToString())
                 .SendAsync("ActualizarJugadores", partida.JugadoresActuales, nombreJugador);
 
             return true;
+        }
+
+        public async Task RemoverJugadorDePartida(int partidaId, string nombreUsuario)
+        {
+            var partida = _partidas.FirstOrDefault(p => p.Id == partidaId);
+            if (partida != null)
+            {
+                var jugadorAEliminar = partida.Jugadores.FirstOrDefault(j => j.Nombre == nombreUsuario);
+                if (jugadorAEliminar != null)
+                {
+                    partida.Jugadores.Remove(jugadorAEliminar);
+                    partida.JugadoresActuales = partida.Jugadores.Count;
+                }
+
+                // Si la partida se queda sin jugadores, la borramos
+                if (partida.Jugadores.Count == 0)
+                {
+                    _partidas.Remove(partida);
+                }
+                else
+                {
+                    // NOTIFICACIÓN EN TIEMPO REAL: Avisamos a los demás miembros del grupo
+                    await _hubContext.Clients.Group(partidaId.ToString())
+                        .SendAsync("JugadorAbandono", nombreUsuario);
+                }
+            }
         }
     }
 }

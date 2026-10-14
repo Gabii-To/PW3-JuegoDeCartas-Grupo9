@@ -33,8 +33,8 @@
         </ul>
 
         <div class="mt-4">
-            <a asp-controller="Partida" asp-action="Index" class="btn btn-secondary btn-sm">
-                Salir de la Mesa
+            <a asp-controller="Partida" asp-action="Salir" asp-route-id="@Model.Id" class="btn btn-secondary btn-sm">
+                    Salir de la Mesa
             </a>
         </div>
     </div>
@@ -68,6 +68,11 @@
             });
         }).catch(function (err) {
             return console.error(err.toString());
+        });
+        connection.on("JugadorAbandono", function (nombreJugadorQueSeFue) {
+            // Recargamos la página o removemos su elemento de la lista dinámicamente
+            // Lo más seguro para refrescar estados y contadores es recargar:
+            location.reload(); 
         });
     </script>
 }

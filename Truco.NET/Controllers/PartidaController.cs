@@ -1,6 +1,7 @@
-﻿using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using System.Threading.Tasks;
 using Truco.Net.Logica.Servicios;
 using Truco.Net.Models;
 
@@ -76,15 +77,32 @@ namespace Truco.Net.Controllers
                 return RedirectToAction("Index");
             }
 
-            // Si el jugador no es el creador ni está aún en la lista, se unirá automáticamente
+            // Si el jugador no es el creador ni está en la lista, se une
             bool yaEstaEnPartida = partida.Jugadores.Exists(j => j.Nombre == usuarioLogueado);
             if (!yaEstaEnPartida)
             {
                 await _partidaService.UnirseAPartidaAsync(id, usuarioLogueado);
             }
 
-            // Retornamos la vista Escoba.cshtml pasando el objeto partida completo
+            
             return View("Escoba", partida);
         }
+
+
+        [HttpGet]
+        public async Task<IActionResult> Salir(int id)
+        {
+            var usuarioLogueado = HttpContext.Session.GetString("UsuarioLogueado");
+
+            if (string.IsNullOrEmpty(usuarioLogueado))
+            {
+                return RedirectToAction("Index", "Home");
+            }
+            await _partidaService.RemoverJugadorDePartida(id, usuarioLogueado);
+
+            return RedirectToAction("Index", "Partida");
+        }
     }
+
+
 }

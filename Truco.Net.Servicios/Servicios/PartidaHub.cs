@@ -15,5 +15,7 @@ namespace Truco.Net.Logica.Servicios
         {
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"partida_{partidaId}");
         }
+
+
     }
 }
