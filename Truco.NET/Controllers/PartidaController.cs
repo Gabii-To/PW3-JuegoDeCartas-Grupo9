@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 using Truco.Net.Logica.Servicios;
@@ -17,32 +18,23 @@ namespace Truco.Net.Controllers
             _partidaService = partidaService;
         }
 
+        [VerificacionSesion]
         public IActionResult Index(string modo)
         {
-            // Comprobar si el usuario inició sesión
-            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UsuarioLogueado")))
-            {
-                TempData["ErrorLogin"] = "Debes iniciar sesión para buscar o unirte a una partida.";
-                return RedirectToAction("Index", "Home");
-            }
+
 
             ViewBag.ModoFiltro = modo;
 
-            // Obtenemos las partidas reales desde el servicio y se las pasamos a la vista
+            // Obtenemos las partidas desde el servicio y se las pasamos a la vista
             var partidas = _partidaService.ObtenerPartidasActivas(modo);
             return View(partidas);
         }
 
         [HttpPost]
+        [VerificacionSesion]
         public IActionResult Crear(string nombrePartida, string modo)
         {
             var usuarioLogueado = HttpContext.Session.GetString("UsuarioLogueado");
-
-            if (string.IsNullOrEmpty(usuarioLogueado))
-            {
-                TempData["ErrorLogin"] = "Debes iniciar sesión para crear una partida.";
-                return RedirectToAction("Index", "Home");
-            }
 
             if (string.IsNullOrWhiteSpace(nombrePartida))
             {
@@ -57,15 +49,10 @@ namespace Truco.Net.Controllers
             return RedirectToAction("Escoba", new { id = nuevaPartida.Id });
         }
 
+        [VerificacionSesion]
         public async Task<IActionResult> Escoba(int id)
         {
             var usuarioLogueado = HttpContext.Session.GetString("UsuarioLogueado");
-
-            if (string.IsNullOrEmpty(usuarioLogueado))
-            {
-                TempData["ErrorLogin"] = "Debes iniciar sesión para entrar a una mesa.";
-                return RedirectToAction("Index", "Home");
-            }
 
             // Buscamos la partida actual en el servicio
             var partida = _partidaService.ObtenerPartidasActivas(null)
@@ -81,7 +68,7 @@ namespace Truco.Net.Controllers
             bool yaEstaEnPartida = partida.Jugadores.Exists(j => j.Nombre == usuarioLogueado);
             if (!yaEstaEnPartida)
             {
-                await _partidaService.UnirseAPartidaAsync(id, usuarioLogueado);
+                await _partidaService.UnirseAPartidaAsync(id, usuarioLogueado, null);
             }
 
             
@@ -90,17 +77,32 @@ namespace Truco.Net.Controllers
 
 
         [HttpGet]
+        [VerificacionSesion]
         public async Task<IActionResult> Salir(int id)
         {
             var usuarioLogueado = HttpContext.Session.GetString("UsuarioLogueado");
 
-            if (string.IsNullOrEmpty(usuarioLogueado))
-            {
-                return RedirectToAction("Index", "Home");
-            }
             await _partidaService.RemoverJugadorDePartida(id, usuarioLogueado);
 
             return RedirectToAction("Index", "Partida");
+        }
+    }
+
+
+    //se llama con [verificar sesion[
+    public class VerificacionSesionAttribute : ActionFilterAttribute
+    {
+        public override void OnActionExecuting(ActionExecutingContext context)
+        {
+            var usuarioLogueado = context.HttpContext.Session.GetString("UsuarioLogueado");
+
+            if (string.IsNullOrEmpty(usuarioLogueado))
+            {
+                context.HttpContext.Session.SetString("ErrorLogin", "Debes iniciar sesión para realizar esta acción.");
+                context.Result = new RedirectToActionResult("Index", "Home", null);
+            }
+
+            base.OnActionExecuting(context);
         }
     }
 

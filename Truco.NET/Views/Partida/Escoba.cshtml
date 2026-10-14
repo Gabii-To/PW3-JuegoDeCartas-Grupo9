@@ -1,7 +1,13 @@
 ﻿@model Truco.Net.Models.Partida
-
 @{
     ViewData["Title"] = Model.Nombre;
+
+    // Determinamos el máximo de jugadores según el modo
+    bool es4P = Model.Modo.Equals("4p", System.StringComparison.OrdinalIgnoreCase) ||
+                Model.Modo.Equals("1v1v1v1", System.StringComparison.OrdinalIgnoreCase);
+    int maxJugadores = es4P ? 4 : 2;
+    int jugadoresActuales = Model.Jugadores?.Count ?? 1;
+    bool salaLlena = jugadoresActuales >= maxJugadores;
 }
 
 <div class="container my-5 text-center">
@@ -10,14 +16,21 @@
             @Model.Nombre <span class="subtitulo-neon">(@Model.Modo.ToUpper())</span>
         </h2>
         <hr class="border-secondary my-3">
-        
-        <!-- Estado de la partida -->
-        <div id="estadoPartida" class="alert alert-warning bg-dark text-warning border-warning py-2 mb-4 d-inline-block px-4">
-            ⏳ Estado: <strong>Esperando jugadores...</strong>
+
+        <!-- Estado de la partida dinámico al cargar -->
+        <div id="estadoPartida" class="alert @(salaLlena ? "alert-success text-success border-success" : "alert-warning text-warning border-warning") bg-dark py-2 mb-4 d-inline-block px-4">
+            @if (salaLlena)
+            {
+                @:🚀 Estado: <strong>¡Sala llena! Comenzando partida...</strong>
+            }
+            else
+            {
+                @:⏳ Estado: <strong>Esperando jugadores (@jugadoresActuales/@maxJugadores)...</strong>
+            }
         </div>
 
         <h5 class="text-light mb-3">Jugadores en la Mesa:</h5>
-        
+
         <!-- Lista dinámica de jugadores -->
         <ul id="listaJugadores" class="list-group list-group-flush mx-auto" style="max-width: 400px;">
             @if (Model.Jugadores != null)
@@ -34,7 +47,7 @@
 
         <div class="mt-4">
             <a asp-controller="Partida" asp-action="Salir" asp-route-id="@Model.Id" class="btn btn-secondary btn-sm">
-                    Salir de la Mesa
+                Salir de la Mesa
             </a>
         </div>
     </div>
@@ -45,12 +58,13 @@
 
     <script>
         const partidaId = "@Model.Id";
+        const maxJugadores = @maxJugadores; // Pasamos el límite desde C# a JS
 
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/partidahub")
             .build();
 
-        connection.on("ActualizarJugadores", function (cantidadActual, nuevoJugadorNombre) {
+        connection.on("ActualizarJugadores", function(cantidadActual, nuevoJugadorNombre) {
             const lista = document.getElementById("listaJugadores");
             const li = document.createElement("li");
             li.className = "list-group-item bg-dark text-light border-secondary d-flex justify-content-between align-items-center";
@@ -58,21 +72,29 @@
             lista.appendChild(li);
 
             const estadoDiv = document.getElementById("estadoPartida");
-            estadoDiv.innerHTML = `⏳ Estado: <strong>Esperando jugadores (${cantidadActual}/...)</strong>`;
+
+            // Validamos si la sala se llenó con este nuevo ingreso
+            if (cantidadActual >= maxJugadores) {
+                estadoDiv.className = "alert alert-success bg-dark text-success border-success py-2 mb-4 d-inline-block px-4";
+                estadoDiv.innerHTML = `🚀 Estado: <strong>¡Sala llena! Comenzando partida...</strong>`;
+
+            } else {
+                estadoDiv.innerHTML = `⏳ Estado: <strong>Esperando jugadores (${cantidadActual}/${maxJugadores})</strong>`;
+            }
         });
 
-        connection.start().then(function () {
+        connection.on("JugadorAbandono", function(nombreJugadorQueSeFue) {
+            // Recargamos la página si alguien se va para actualizar estados y contadores
+            location.reload();
+        });
+
+        connection.start().then(function() {
             console.log("Conectado a SignalR con éxito.");
-            connection.invoke("UnirseAMesa", partidaId).catch(function (err) {
+            connection.invoke("UnirseAMesa", partidaId).catch(function(err) {
                 return console.error(err.toString());
             });
-        }).catch(function (err) {
+        }).catch(function(err) {
             return console.error(err.toString());
-        });
-        connection.on("JugadorAbandono", function (nombreJugadorQueSeFue) {
-            // Recargamos la página o removemos su elemento de la lista dinámicamente
-            // Lo más seguro para refrescar estados y contadores es recargar:
-            location.reload(); 
         });
     </script>
 }

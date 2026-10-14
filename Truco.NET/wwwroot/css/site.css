@@ -15,6 +15,7 @@
 html, body {
     height: 100%;
     margin: 0;
+    padding: 0;
 }
 
 body {
@@ -226,17 +227,13 @@ main {
     font-weight: 600;
 }
 
-
 footer {
+    margin-top: auto !important; 
     flex-shrink: 0;
     background-color: #050505 !important;
-    border-top: 2px solid var(--madera-borde) !important;
-    color: #ffffff !important; /* Texto 100% blanco */
+    border-top: 2px solid var(--madera-borde, #4a2e18) !important;
+    color: #ffffff !important;
     font-weight: 500;
     letter-spacing: 0.5px;
     box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.8);
 }
-
-    footer small, footer p, footer span {
-        color: #ffffff !important;
-    }
