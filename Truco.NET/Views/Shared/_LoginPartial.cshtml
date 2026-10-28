@@ -1,13 +1,11 @@
-﻿@using Microsoft.AspNetCore.Identity
-@inject SignInManager<IdentityUser> SignInManager
-@inject UserManager<IdentityUser> UserManager
+﻿@inject IHttpContextAccessor HttpContextAccessor
 
 <ul class="navbar-nav">
-    @if (!string.IsNullOrEmpty(Context.Session.GetString("UsuarioLogueado")))
+    @if (!string.IsNullOrEmpty(HttpContextAccessor.HttpContext?.Session.GetString("UsuarioLogueado")))
     {
         <li class="nav-item">
             <span class="nav-link text-dark fw-bold">
-                ¡Hola, @Context.Session.GetString("UsuarioLogueado")!
+                ¡Hola, @HttpContextAccessor.HttpContext.Session.GetString("UsuarioLogueado")!
             </span>
         </li>
         <li class="nav-item">

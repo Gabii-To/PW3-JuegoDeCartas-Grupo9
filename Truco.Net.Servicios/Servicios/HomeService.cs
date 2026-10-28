@@ -1,44 +1,57 @@
-﻿namespace Truco.Net.Servicios
+﻿using Truco.Net.Entidades;
+using Truco.Net.Repositorio;
+using Microsoft.EntityFrameworkCore;
+
+namespace Truco.Net.Servicios
 {
     public interface IHomeService
     {
-        bool ValidarUsuario(string usuario, string password);
-        (bool Exito, string Mensaje) RegistrarUsuario(string usuario, string password);
+        Task<Usuario?> ValidarUsuarioAsync(string usuario, string password);
+        Task<(bool Exito, string Mensaje)> RegistrarUsuarioAsync(string usuario, string password);
     }
+
+
     public class HomeService : IHomeService
     {
-        // Array para simular DB
-        private readonly List<(string Usuario, string Password)> _usuarios = new()
-        {
-            ("admin", "1234"),
-            ("jugador1", "truco2026"),
-            ("juan", "secret")
-        };
+        private readonly EscobaDbContext _context;
 
-        public bool ValidarUsuario(string usuario, string password)
+        public HomeService(EscobaDbContext context)
         {
-            if (string.IsNullOrEmpty(usuario) || string.IsNullOrEmpty(password))
-                return false;
-
-            
-            return _usuarios.Any(u => u.Usuario.Equals(usuario, StringComparison.OrdinalIgnoreCase)
-                                   && u.Password == password);
+            _context = context;
         }
 
-        public (bool Exito, string Mensaje) RegistrarUsuario(string usuario, string password)
+        public async Task<Usuario?> ValidarUsuarioAsync(string usuario, string password)
+        {
+            if (string.IsNullOrEmpty(usuario) || string.IsNullOrEmpty(password))
+                return null;
+
+            // Busca el usuario en la base de datos real
+            return await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Nombre.ToLower() == usuario.ToLower() && u.Password == password);
+        }
+
+        public async Task<(bool Exito, string Mensaje)> RegistrarUsuarioAsync(string usuario, string password)
         {
             if (string.IsNullOrWhiteSpace(usuario) || string.IsNullOrWhiteSpace(password))
                 return (false, "Todos los campos son obligatorios.");
 
-            // Verifica si el nombre de usuario ya existe en la lista
-            bool existe = _usuarios.Any(u => u.Usuario.Equals(usuario, StringComparison.OrdinalIgnoreCase));
+            bool existe = await _context.Usuarios
+                .AnyAsync(u => u.Nombre.ToLower() == usuario.ToLower());
+
             if (existe)
             {
                 return (false, "El nombre de usuario ya se encuentra registrado.");
             }
 
-            // Agrega el nuevo usuario a la lista en memoria
-            _usuarios.Add((usuario, password));
+            var nuevoUsuario = new Usuario
+            {
+                Nombre = usuario,
+                Password = password
+            };
+
+            _context.Usuarios.Add(nuevoUsuario);
+            await _context.SaveChangesAsync();
+
             return (true, "Usuario registrado con éxito.");
         }
     }

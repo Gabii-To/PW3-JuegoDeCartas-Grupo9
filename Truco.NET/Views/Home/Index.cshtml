@@ -6,6 +6,33 @@
     bool estaLogueado = !string.IsNullOrEmpty(Context.Session.GetString("UsuarioLogueado"));
 }
 
+<!-- ALERTA DE ÉXITO (Ej: Registro exitoso) -->
+@if (TempData["MensajeSuccess"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show text-center" role="alert">
+        @TempData["MensajeSuccess"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- ALERTA DE ERROR (Ej: Usuario o contraseña incorrectos) -->
+@if (TempData["ErrorLogin"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show text-center" role="alert">
+        @TempData["ErrorLogin"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- ALERTA DE ERROR DE REGISTRO -->
+@if (TempData["ErrorRegister"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show text-center" role="alert">
+        @TempData["ErrorRegister"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
 <main class="container my-5">
 
     <!-- Bienvenida -->

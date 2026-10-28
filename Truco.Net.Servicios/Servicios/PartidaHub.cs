@@ -16,27 +16,30 @@ namespace Truco.Net.Logica.Servicios
             _partidaService = partidaService;
         }
 
-        public async Task UnirseAMesa(string partidaIdStr, string nombreUsuario)
+        public async Task UnirseAMesa(string partidaIdStr, int usuarioId)
         {
             if (int.TryParse(partidaIdStr, out int partidaId))
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, partidaIdStr);
 
-                // Registramos en el servicio al usuario
-                await _partidaService.UnirseAPartidaAsync(partidaId, nombreUsuario, Context.ConnectionId);
+                // Registramos en el servicio usando el ID numérico del usuario
+                await _partidaService.UnirseAPartidaAsync(partidaId, usuarioId, Context.ConnectionId);
+
                 // Guardamos a qué partida pertenece esta conexión
                 _conexionPartida[Context.ConnectionId] = partidaId;
             }
         }
 
-        public async Task SalirDeMesa(string partidaIdStr, string nombreUsuario)
+        public async Task SalirDeMesa(string partidaIdStr, int usuarioId)
         {
             if (int.TryParse(partidaIdStr, out int partidaId))
             {
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, partidaIdStr);
-                _conexionPartida.TryRemove(Context.ConnectionId, out _);
 
-                await _partidaService.RemoverJugadorDePartida(partidaId, nombreUsuario);
+                // Llamamos al servicio pasando el ID numérico
+                await _partidaService.RemoverJugadorDePartida(partidaId, usuarioId);
+
+                _conexionPartida.TryRemove(Context.ConnectionId, out _);
             }
         }
 

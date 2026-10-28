@@ -12,11 +12,17 @@
 		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client.Core" Version="10.0.12" />
 		<PackageReference Include="MySql.EntityFrameworkCore" Version="10.0.9" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.12" />
+		<PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Truco.Net.Entidades\Truco.Net.Entidades.csproj" />
+	  <ProjectReference Include="..\Truco.Net.Repositorio\Truco.Net.Repositorio.csproj" />
 	  <ProjectReference Include="..\Truco.Net.Servicios\Truco.Net.Logica.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Data\" />
 	</ItemGroup>
 
 </Project>

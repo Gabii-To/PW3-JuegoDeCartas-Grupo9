@@ -1,33 +1,21 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Truco.Net.Servicios;
-using Truco.NET.Data;
 using Truco.Net.Logica.Servicios;
+using Truco.Net.Repositorio;
+using Truco.Net.Servicios;
+
 
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// Se conecta a DB usando las credenciales necesarias(connection string)
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseMySQL(connectionString));
+builder.Services.AddDbContext<EscobaDbContext>(options =>
+    options.UseSqlServer(connectionString));
 
-
-//configuracion de autentificacion para login/register mediante IdentityUser
-builder.Services.AddDefaultIdentity<IdentityUser>(options =>
-{
-    options.SignIn.RequireConfirmedAccount = false;
-    options.Password.RequireDigit = false;
-    options.Password.RequiredLength = 4;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireUppercase = false;
-})
-.AddEntityFrameworkStores<ApplicationDbContext>();
-
-//los datos se guardaran en cache, para sesion
+// Los datos se guardarán en caché para la sesión
 builder.Services.AddDistributedMemoryCache();
 
-// inicio y config de session
+// Inicio y configuración de sesión
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30); // Duración de la sesión
@@ -35,18 +23,38 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-//soporte para patron MVC
+builder.Services.AddHttpContextAccessor();
+
+// Soporte para patrón MVC
 builder.Services.AddControllersWithViews();
-// añade las clases y se usan como singleton, Una sola instancia en el server.
-builder.Services.AddSingleton<IHomeService, HomeService>();
+
+// Servicios personalizados
+builder.Services.AddScoped<IHomeService, HomeService>();
 builder.Services.AddSingleton<PartidaService>();
-// Inicia el motor de vistar Razor
+
+// Inicia el motor de vistas Razor
 builder.Services.AddRazorPages();
-//añade SignalR
+
+// Añade SignalR
 builder.Services.AddSignalR();
 
-//construye segun la config previamente establecida
 var app = builder.Build();
+
+// Seeder automático
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<EscobaDbContext>();
+        DbInitializer.Initialize(context);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Ocurrió un error al inicializar la base de datos con los usuarios.");
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -55,13 +63,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-
-// pipeline en donde pasan todas las peticiones http
-
-//si alguien usa http::dominio, se cambia a https::dominio
 app.UseHttpsRedirection();
-
-// Permite cargar Bootstrap, CSS y JS desde wwwroot)
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
@@ -72,7 +74,6 @@ app.MapHub<PartidaHub>("/partidahub");
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-
 app.MapRazorPages();
 
 app.Run();

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 using Truco.Net.Logica.Servicios;
-using Truco.Net.Models;
+using Truco.Net.Entidades;
 
 namespace Truco.Net.Controllers
 {
@@ -12,7 +12,6 @@ namespace Truco.Net.Controllers
     {
         private readonly PartidaService _partidaService;
 
-        // Inyectamos el servicio de partidas
         public PartidaController(PartidaService partidaService)
         {
             _partidaService = partidaService;
@@ -21,20 +20,16 @@ namespace Truco.Net.Controllers
         [VerificacionSesion]
         public IActionResult Index(string modo)
         {
-
-
             ViewBag.ModoFiltro = modo;
-
-            // Obtenemos las partidas desde el servicio y se las pasamos a la vista
             var partidas = _partidaService.ObtenerPartidasActivas(modo);
             return View(partidas);
         }
 
         [HttpPost]
         [VerificacionSesion]
-        public IActionResult Crear(string nombrePartida, string modo)
+        public async Task<IActionResult> Crear(string nombrePartida, string modo)
         {
-            var usuarioLogueado = HttpContext.Session.GetString("UsuarioLogueado");
+            int usuarioId = HttpContext.Session.GetInt32("UsuarioId")!.Value;
 
             if (string.IsNullOrWhiteSpace(nombrePartida))
             {
@@ -42,19 +37,16 @@ namespace Truco.Net.Controllers
                 return RedirectToAction("Index", new { modo = modo });
             }
 
-            // Creamos la partida guardando al creador obtenido de la sesión
-            var nuevaPartida = _partidaService.CrearPartida(nombrePartida, modo, usuarioLogueado);
+            var nuevaPartida = await _partidaService.CrearPartidaAsync(usuarioId, nombrePartida, modo);
 
-            // Redirigimos a la vista de la mesa (Escoba) usando el ID real generado
             return RedirectToAction("Escoba", new { id = nuevaPartida.Id });
         }
 
         [VerificacionSesion]
         public async Task<IActionResult> Escoba(int id)
         {
-            var usuarioLogueado = HttpContext.Session.GetString("UsuarioLogueado");
+            int usuarioId = HttpContext.Session.GetInt32("UsuarioId")!.Value;
 
-            // Buscamos la partida actual en el servicio
             var partida = _partidaService.ObtenerPartidasActivas(null)
                                          .Find(p => p.Id == id);
 
@@ -64,25 +56,23 @@ namespace Truco.Net.Controllers
                 return RedirectToAction("Index");
             }
 
-            // Si el jugador no es el creador ni está en la lista, se une
-            bool yaEstaEnPartida = partida.Jugadores.Exists(j => j.Nombre == usuarioLogueado);
+            bool yaEstaEnPartida = partida.Jugadores.Exists(j => j.UsuarioId == usuarioId);
+
             if (!yaEstaEnPartida)
             {
-                await _partidaService.UnirseAPartidaAsync(id, usuarioLogueado, null);
+                await _partidaService.UnirseAPartidaAsync(id, usuarioId, null);
             }
 
-            
             return View("Escoba", partida);
         }
-
 
         [HttpGet]
         [VerificacionSesion]
         public async Task<IActionResult> Salir(int id)
         {
-            var usuarioLogueado = HttpContext.Session.GetString("UsuarioLogueado");
+            int usuarioId = HttpContext.Session.GetInt32("UsuarioId")!.Value;
 
-            await _partidaService.RemoverJugadorDePartida(id, usuarioLogueado);
+            await _partidaService.RemoverJugadorDePartida(id, usuarioId);
 
             return RedirectToAction("Index", "Partida");
         }
@@ -94,9 +84,9 @@ namespace Truco.Net.Controllers
     {
         public override void OnActionExecuting(ActionExecutingContext context)
         {
-            var usuarioLogueado = context.HttpContext.Session.GetString("UsuarioLogueado");
+            var usuarioId = context.HttpContext.Session.GetInt32("UsuarioId");
 
-            if (string.IsNullOrEmpty(usuarioLogueado))
+            if (usuarioId == null)
             {
                 context.HttpContext.Session.SetString("ErrorLogin", "Debes iniciar sesión para realizar esta acción.");
                 context.Result = new RedirectToActionResult("Index", "Home", null);

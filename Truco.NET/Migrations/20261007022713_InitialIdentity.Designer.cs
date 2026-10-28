@@ -4,13 +4,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Truco.NET.Data;
+
 
 #nullable disable
 
 namespace Truco.NET.Migrations
 {
-    [DbContext(typeof(ApplicationDbContext))]
+
     [Migration("20261007022713_InitialIdentity")]
     partial class InitialIdentity
     {

@@ -1,5 +1,4 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.V4.Pages.Account.Internal;
+
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using Truco.Net.Servicios;
@@ -10,18 +9,17 @@ namespace Truco.NET.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly SignInManager<IdentityUser> _signInManager;
-        private readonly UserManager<IdentityUser> _userManager;
+
+
         private readonly HomeService _homeService;
 
 
         public HomeController(
-            SignInManager<IdentityUser> signInManager,
-            UserManager<IdentityUser> userManager,
+
             IHomeService homeService)
         {
-            _signInManager = signInManager;
-            _userManager = userManager;
+
+
             _homeService = (HomeService?)homeService;
         }
         public IActionResult Index()
@@ -34,27 +32,25 @@ namespace Truco.NET.Controllers
             return View();
         }
 
-        [HttpPost]
-        public IActionResult Login(Usuario usuario)
-        {
-            // Verifica si la propiedad Nombre o Password están vacías según [Required] de la entidad
-            if (string.IsNullOrWhiteSpace(usuario.Nombre) || string.IsNullOrWhiteSpace(usuario.Password))
-            {
-                TempData["ErrorLogin"] = "Debes ingresar usuario y contraseña.";
-                return RedirectToAction("Index");
-            }
 
-            if (_homeService.ValidarUsuario(usuario.Nombre, usuario.Password))
+        [HttpPost]
+        [HttpPost]
+        public async Task<IActionResult> Login(string Nombre, string Password)
+        {
+            var usuarioEnDb = await _homeService.ValidarUsuarioAsync(Nombre, Password);
+
+            if (usuarioEnDb != null)
             {
-                HttpContext.Session.SetString("UsuarioLogueado", usuario.Nombre);
-                TempData["MensajeSuccess"] = $"¡Bienvenido {usuario.Nombre}!";
-                return RedirectToAction("Index");
+                HttpContext.Session.SetInt32("UsuarioId", usuarioEnDb.Id);
+                HttpContext.Session.SetString("UsuarioLogueado", usuarioEnDb.Nombre);
+
+                return RedirectToAction("Index", "Partida");
             }
 
             TempData["ErrorLogin"] = "Usuario o contraseña incorrectos.";
-            return RedirectToAction("Index");
+            return RedirectToAction("Index", "Home");
         }
-
+        /*
         [HttpPost]
         public IActionResult Register(Usuario usuario) // 👈 Recibes el objeto Usuario directo
         {
@@ -78,6 +74,7 @@ namespace Truco.NET.Controllers
             TempData["ErrorRegister"] = "Por favor, completa correctamente todos los campos.";
             return RedirectToAction("Index");
         }
+        */
 
         public IActionResult Logout()
         {

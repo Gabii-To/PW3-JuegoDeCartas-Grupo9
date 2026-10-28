@@ -8,18 +8,18 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
+		<PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
 
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Update="appsettings.json"
-				 CopyToPublishDirectory="Never" />
-		<Content Update="appsettings.Development.json"
-				 CopyToPublishDirectory="Never" />
+		<Content Update="appsettings.json" CopyToPublishDirectory="Never" />
+		<Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\Truco.Net.Entidades\Truco.Net.Entidades.csproj" />
+		<ProjectReference Include="..\Truco.Net.Repositorio\Truco.Net.Repositorio.csproj" />
 	</ItemGroup>
 
 </Project>
