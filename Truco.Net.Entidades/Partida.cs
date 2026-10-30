@@ -41,6 +41,8 @@ namespace Truco.Net.Entidades
         public List<Jugador> Jugadores { get; set; } = new List<Jugador>();
         [NotMapped]
         public Mazo MazoCartas { get; set; } = new Mazo();
+        [NotMapped]
+        public List<Carta> CartasEnMesa { get; set; } = new List<Carta>();
 
 
 

@@ -198,5 +198,100 @@ namespace Truco.Net.Logica.Servicios
 
             return false;
         }
+
+ // funciones para partida Activa 
+
+        public PartidaViewModel? ActualizarDatos(int partidaId, int usuarioId)
+        {
+            var partida = BuscarPartidaPorID(partidaId);
+            if (partida == null)
+            {
+                return null;
+            }
+
+            // Buscamos al jugador que realiza la petición dentro de la partida
+            var jugadorSolicitante = partida.Jugadores.FirstOrDefault(j => j.UsuarioId == usuarioId);
+            if (jugadorSolicitante == null)
+            {
+                return null;
+            }
+
+            // Identificamos de quién es el turno actual
+            var jugadorEnTurno = partida.Jugadores.FirstOrDefault(j => j.EsTurnoActual);
+
+            var viewModel = new PartidaViewModel
+            {
+                PartidaId = partida.Id,
+                NombrePartida = partida.Nombre,
+                Modo = partida.Modo,
+                Estado = partida.Estado, 
+
+                // Turno
+                TurnoJugadorUsuarioId = jugadorEnTurno?.UsuarioId ?? 0,
+                EsMiTurno = jugadorSolicitante.EsTurnoActual,
+
+                // Cartas: solo devolvemos las cartas del jugador actual y las de la mesa
+                MisCartas = jugadorSolicitante.CartasEnMano != null
+                    ? jugadorSolicitante.CartasEnMano.ToList()
+                    : new List<Carta>(),
+
+                CartasEnMesa = partida.CartasEnMesa != null
+                    ? partida.CartasEnMesa.ToList()
+                    : new List<Carta>(),
+
+                // Mapeamos el resumen de los jugadores para la tabla de posiciones y oponentes
+                Jugadores = partida.Jugadores.Select(j => new JugadorResumenDto
+                {
+                    UsuarioId = j.UsuarioId,
+                    Nombre = j.UsuarioAsociado?.Nombre ?? "Jugador",
+                    Puntos = j.Puntos,
+                    CantidadCartasMano = j.CartasEnMano?.Count ?? 0, // No revelamos sus cartas, solo cuántas le quedan
+                    EsTurnoActual = j.EsTurnoActual
+                }).ToList()
+            };
+
+            return viewModel;
+        }
+
+        public bool IniciarPartida(int partidaId, int usuarioIdPeticion)
+        {
+            var partida = BuscarPartidaPorID(partidaId);
+            if (partida == null)
+            {
+                return false; 
+            }
+
+            if (partida.Estado != EnumPartida.EnEspera)
+            {
+                return false; 
+            }
+
+            partida.MazoCartas = new Mazo(); 
+            partida.MazoCartas.MezclarCartas();   
+
+            // Repartir 3 cartas a cada jugador participante
+            foreach (var jugador in partida.Jugadores)
+            {
+                jugador.CartasEnMano = partida.MazoCartas.RepartirCartas(3);
+            }
+
+            // Colocar 4 cartas iniciales sobre la mesa
+            partida.CartasEnMesa = partida.MazoCartas.RepartirCartas(4);
+
+            // Asigna el turno inicial
+            if (partida.Jugadores.Any())
+            {
+
+                foreach (var j in partida.Jugadores)
+                {
+                    j.EsTurnoActual = false;
+                }
+
+                partida.Jugadores.First().EsTurnoActual = true;
+            }
+            partida.Estado = EnumPartida.EnCurso;
+
+            return true;
+        }
     }
 }
