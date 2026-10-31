@@ -67,6 +67,7 @@ namespace Truco.Net.Logica.Servicios
                 Nombre = nombrePartida,
                 Modo = string.IsNullOrEmpty(modo) ? "1v1" : modo,
                 UsuarioIdCreador = usuario.Id,
+                Creador = creador,
                 JugadoresActuales = 1,
                 Jugadores = new List<Jugador> { creador }
             };

@@ -46,7 +46,7 @@
                                 </span>
                             </div>
                             <p class="small text-light opacity-75 mb-3">
-                                Creador: <strong>@partida.Creador.UsuarioAsociado.Nombre</strong> (@partida.JugadoresActuales/@maxJugadores Jugadores)
+                                Creador: <strong>@(partida.Creador?.UsuarioAsociado?.Nombre ?? "No disponible")</strong> (@partida.JugadoresActuales/@maxJugadores Jugadores)
                             </p>
                         </div>
                         <div>
