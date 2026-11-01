@@ -28,7 +28,7 @@
     </div>
 
     <!-- Lista Dinámica de Partidas Activas -->
-    <div class="row g-3">
+    <div class="row g-3" id="listaPartidas" data-modo="@modoActual">
         @if (Model != null && Model.Any())
         {
             @foreach (var partida in Model)
@@ -36,7 +36,7 @@
                 bool es4P = partida.Modo.Equals("4p", System.StringComparison.OrdinalIgnoreCase);
                 int maxJugadores = es4P ? 4 : 2;
 
-                <div class="col-md-6 col-lg-4">
+                <div class="col-md-6 col-lg-4" data-partida-id="@partida.Id" data-modo="@partida.Modo">
                     <div class="mesa-truco p-3 h-100 d-flex flex-column justify-content-between">
                         <div>
                             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -60,7 +60,7 @@
         }
         else
         {
-            <div class="col-12 text-center py-5">
+            <div class="col-12 text-center py-5" id="sinPartidas">
                 <p class="text-light opacity-75 fs-5">No hay mesas activas en este momento para este modo. ¡Creá una y empezá a jugar!</p>
             </div>
         }
@@ -107,9 +107,143 @@
 
 
 @section Scripts {
+    <!-- SignalR mantiene sincronizado el listado mientras el usuario permanece
+         en esta página, sin depender de polling ni recargas manuales. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+
     <script>
+        const modoActual = "@modoActual";
+        const listaPartidas = document.getElementById("listaPartidas");
+        const urlEscoba = "@Url.Action("Escoba", "Partida")";
+
         function setModoPartida(modo) {
             document.getElementById('modalModoInput').value = modo;
         }
+
+        function normalizarModo(modo) {
+            return (modo || "").toLowerCase();
+        }
+
+        function actualizarEstadoVacio() {
+            // El mensaje vacío se agrega o elimina según las tarjetas que
+            // pertenecen al modo actualmente seleccionado.
+            const tienePartidas = listaPartidas.querySelector("[data-partida-id]") !== null;
+            const estadoVacio = document.getElementById("sinPartidas");
+
+            if (tienePartidas && estadoVacio) {
+                estadoVacio.remove();
+            } else if (!tienePartidas && !estadoVacio) {
+                listaPartidas.insertAdjacentHTML("beforeend",
+                    '<div class="col-12 text-center py-5" id="sinPartidas">' +
+                    '<p class="text-light opacity-75 fs-5">No hay mesas activas en este momento para este modo. ¡Creá una y empezá a jugar!</p>' +
+                    '</div>');
+            }
+        }
+
+        function crearTarjetaPartida(partida) {
+            // Construimos la tarjeta con textContent en lugar de insertar datos
+            // recibidos del servidor como HTML sin procesar.
+            const es4P = normalizarModo(partida.modo) === "4p";
+            const maxJugadores = es4P ? 4 : 2;
+            const columna = document.createElement("div");
+            columna.className = "col-md-6 col-lg-4";
+            columna.dataset.partidaId = partida.id;
+            columna.dataset.modo = partida.modo;
+
+            const mesa = document.createElement("div");
+            mesa.className = "mesa-truco p-3 h-100 d-flex flex-column justify-content-between";
+
+            const contenido = document.createElement("div");
+            const encabezado = document.createElement("div");
+            encabezado.className = "d-flex justify-content-between align-items-center mb-2";
+
+            const nombre = document.createElement("h5");
+            nombre.className = "fw-bold text-white m-0";
+            nombre.dataset.nombrePartida = "";
+            nombre.textContent = partida.nombre;
+
+            const badge = document.createElement("span");
+            badge.className = es4P ? "badge bg-danger" : "badge bg-warning text-dark";
+            badge.textContent = es4P ? "1v1v1v1" : "1 v 1";
+            encabezado.append(nombre, badge);
+
+            const detalles = document.createElement("p");
+            detalles.className = "small text-light opacity-75 mb-3";
+            detalles.dataset.detallesPartida = "";
+            detalles.textContent = `Creador: ${partida.creador} (${partida.jugadoresActuales}/${maxJugadores} Jugadores)`;
+            contenido.append(encabezado, detalles);
+
+            const acciones = document.createElement("div");
+            const enlace = document.createElement("a");
+            enlace.className = `${es4P ? "btn-bar-danger" : "btn-bar"} btn w-100 btn-sm`;
+            enlace.href = `${urlEscoba}?id=${encodeURIComponent(partida.id)}`;
+            enlace.textContent = "Unirse a la Mesa";
+            acciones.appendChild(enlace);
+
+            mesa.append(contenido, acciones);
+            columna.appendChild(mesa);
+            return columna;
+        }
+
+        function perteneceAlModoActual(partida) {
+            // El servidor envía todos los eventos; cada listado decide cuáles
+            // mostrar según el filtro de modo de su propia página.
+            return normalizarModo(partida.modo) === normalizarModo(modoActual);
+        }
+
+        function agregarOActualizarPartida(partida) {
+            if (!perteneceAlModoActual(partida)) {
+                return;
+            }
+
+            const existente = listaPartidas.querySelector(`[data-partida-id="${partida.id}"]`);
+            if (existente) {
+                // Los eventos pueden llegar varias veces o después de una
+                // reconexión; actualizar la tarjeta evita duplicados.
+                const detalles = existente.querySelector("[data-detalles-partida]");
+                const maxJugadores = normalizarModo(partida.modo) === "4p" ? 4 : 2;
+                detalles.textContent = `Creador: ${partida.creador} (${partida.jugadoresActuales}/${maxJugadores} Jugadores)`;
+            } else {
+                listaPartidas.appendChild(crearTarjetaPartida(partida));
+            }
+
+            actualizarEstadoVacio();
+        }
+
+        const lobbyConnection = new signalR.HubConnectionBuilder()
+            .withUrl("/partidahub")
+            // SignalR intenta recuperar la conexión automáticamente ante una
+            // caída temporal de red.
+            .withAutomaticReconnect()
+            .build();
+
+        lobbyConnection.on("SalaCreada", agregarOActualizarPartida);
+        lobbyConnection.on("SalaActualizada", agregarOActualizarPartida);
+        lobbyConnection.on("SalaEliminada", function(partida) {
+            // Solo se elimina la tarjeta si pertenece al listado actual.
+            const tarjeta = listaPartidas.querySelector(`[data-partida-id="${partida.id}"]`);
+            if (tarjeta) {
+                tarjeta.remove();
+                actualizarEstadoVacio();
+            }
+        });
+
+        lobbyConnection.onreconnected(function() {
+            // Al reconectar, SignalR crea una nueva conexión y los grupos
+            // anteriores deben registrarse nuevamente.
+            lobbyConnection.invoke("UnirseAlLobby").catch(function(err) {
+                console.error("No se pudo volver a unir al lobby:", err);
+            });
+        });
+
+        lobbyConnection.start()
+            .then(function() {
+                // La carga inicial sigue viniendo de Razor; desde este punto
+                // los eventos mantienen la lista actualizada en vivo.
+                return lobbyConnection.invoke("UnirseAlLobby");
+            })
+            .catch(function(err) {
+                console.error("No se pudo conectar al lobby en tiempo real:", err);
+            });
     </script>
 }

@@ -49,7 +49,7 @@ namespace Truco.Net.Logica.Servicios
                 throw new Exception("El usuario no está registrado en la base de datos.");
             }
 
-            EliminarPartidasFantasmas(usuario.Id);
+            await EliminarPartidasFantasmasAsync(usuario.Id);
 
             var creador = new Jugador
             {
@@ -73,6 +73,9 @@ namespace Truco.Net.Logica.Servicios
             };
 
             _partidas.Add(nuevaPartida);
+            // Avisamos a los clientes del lobby después de agregar la sala
+            // para que puedan mostrarla inmediatamente en el listado.
+            await NotificarSalaCreada(nuevaPartida);
             return nuevaPartida;
         }
 
@@ -116,6 +119,9 @@ namespace Truco.Net.Logica.Servicios
             {
                 await _hubContext.Clients.Group(partida.Id.ToString())
                     .SendAsync("ActualizarJugadores", partida.JugadoresActuales, usuario.Nombre);
+                // El contador de jugadores también se refleja en las tarjetas
+                // que están viendo los usuarios del lobby.
+                await NotificarSalaActualizada(partida);
             }
 
             return true;
@@ -151,12 +157,18 @@ namespace Truco.Net.Logica.Servicios
                     if (partida.Jugadores.Count == 0)
                     {
                         _partidas.Remove(partida);
+                        // Una sala sin jugadores deja de estar disponible para
+                        // todos los clientes que todavía están en el listado.
+                        await NotificarSalaEliminada(partida);
                     }
                     else
                     {
 
                         await _hubContext.Clients.Group(partidaId.ToString())
                             .SendAsync("JugadorAbandono", nombreUsuario);
+                        // Si todavía quedan jugadores, la sala continúa visible,
+                        // pero el contador debe actualizarse en el lobby.
+                        await NotificarSalaActualizada(partida);
                     }
                 }
             }
@@ -193,7 +205,7 @@ namespace Truco.Net.Logica.Servicios
             await RemoverJugadorDePartida(partidaId, usuarioId);
         }
 
-        private void EliminarPartidasFantasmas(int usuarioIdCreador)
+        private async Task EliminarPartidasFantasmasAsync(int usuarioIdCreador)
         {
             // Cambiamos p.UsuarioId por p.UsuarioIdCreador
             var partidasAnteriores = _partidas.Where(p => p.UsuarioIdCreador == usuarioIdCreador).ToList();
@@ -201,7 +213,45 @@ namespace Truco.Net.Logica.Servicios
             foreach (var partidaAntigua in partidasAnteriores)
             {
                 _partidas.Remove(partidaAntigua);
+                // Crear una nueva sala reemplaza la anterior del mismo creador;
+                // también informamos ese borrado a los clientes conectados.
+                await NotificarSalaEliminada(partidaAntigua);
             }
+        }
+
+        private Task NotificarSalaCreada(Partida partida)
+        {
+            // Se envía un resumen y no la entidad completa para exponer solo
+            // los datos necesarios para construir la tarjeta en JavaScript.
+            return _hubContext.Clients.Group(PartidaHub.LobbyGroup)
+                .SendAsync("SalaCreada", CrearResumenSala(partida));
+        }
+
+        private Task NotificarSalaEliminada(Partida partida)
+        {
+            // Para eliminar una tarjeta solo hace falta identificar la partida.
+            return _hubContext.Clients.Group(PartidaHub.LobbyGroup)
+                .SendAsync("SalaEliminada", new { id = partida.Id });
+        }
+
+        private Task NotificarSalaActualizada(Partida partida)
+        {
+            // Se reutiliza el mismo formato de resumen para crear o actualizar
+            // una tarjeta existente sin duplicarla.
+            return _hubContext.Clients.Group(PartidaHub.LobbyGroup)
+                .SendAsync("SalaActualizada", CrearResumenSala(partida));
+        }
+
+        private static object CrearResumenSala(Partida partida)
+        {
+            return new
+            {
+                id = partida.Id,
+                nombre = partida.Nombre,
+                modo = partida.Modo,
+                creador = partida.Creador?.UsuarioAsociado?.Nombre ?? "No disponible",
+                jugadoresActuales = partida.JugadoresActuales
+            };
         }
 
         private static Partida? BuscarPartidaPorID(int partidaId)

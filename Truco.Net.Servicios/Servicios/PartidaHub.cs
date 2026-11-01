@@ -5,6 +5,10 @@ namespace Truco.Net.Logica.Servicios
 {
     public class PartidaHub : Hub
     {
+        // Grupo compartido por todas las conexiones que están viendo el listado
+        // de salas. Permite notificar cambios sin recargar la página.
+        public const string LobbyGroup = "lobby";
+
         private readonly PartidaService _partidaService;
 
         // Solo guardamos la relación: ConnectionId de la pestaña -> ID de la partida
@@ -13,6 +17,19 @@ namespace Truco.Net.Logica.Servicios
         public PartidaHub(PartidaService partidaService)
         {
             _partidaService = partidaService;
+        }
+
+        public Task UnirseAlLobby()
+        {
+            // La vista Partida/Index se suscribe a este grupo al abrirse.
+            return Groups.AddToGroupAsync(Context.ConnectionId, LobbyGroup);
+        }
+
+        public Task SalirDelLobby()
+        {
+            // Se mantiene como operación explícita para poder abandonar el lobby
+            // si en el futuro la vista cambia de sección sin cerrar la conexión.
+            return Groups.RemoveFromGroupAsync(Context.ConnectionId, LobbyGroup);
         }
 
         public async Task UnirseAMesa(string partidaIdStr, int usuarioId)
