@@ -2,10 +2,7 @@
 @{
     ViewData["Title"] = Model.Nombre;
 
-    // Determinamos el máximo de jugadores según el modo
-    bool es4P = Model.Modo.Equals("4p", System.StringComparison.OrdinalIgnoreCase) ||
-                Model.Modo.Equals("1v1v1v1", System.StringComparison.OrdinalIgnoreCase);
-    int maxJugadores = es4P ? 4 : 2;
+    const int maxJugadores = 2;
     int jugadoresActuales = Model.Jugadores?.Count ?? 1;
     bool salaLlena = jugadoresActuales >= maxJugadores;
 }
@@ -13,7 +10,7 @@
 <div class="container my-5 text-center">
     <div class="container-bar mb-4 p-4 mesa-truco">
         <h2 class="titulo-bar fs-2 text-white m-0">
-            @Model.Nombre <span class="subtitulo-neon">(@Model.Modo.ToUpper())</span>
+            @Model.Nombre <span class="subtitulo-neon">(1 VS 1)</span>
         </h2>
         <hr class="border-secondary my-3">
 

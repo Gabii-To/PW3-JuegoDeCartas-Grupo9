@@ -12,6 +12,8 @@ namespace Truco.Net.Logica.Servicios
 {
     public class PartidaService
     {
+        private const string ModoUnico = "1v1";
+        private const int MaxJugadores = 2;
         private static readonly List<Partida> _partidas = new();
         private static int _nextPartidaId = 1;
         private static int _nextJugadorId = 1;
@@ -26,19 +28,14 @@ namespace Truco.Net.Logica.Servicios
             _serviceProvider = serviceProvider;
         }
 
-        public List<Partida> ObtenerPartidasActivas(string modo)
+        public List<Partida> ObtenerPartidasActivas()
         {
-            if (string.IsNullOrEmpty(modo))
-            {
-                return _partidas.ToList();
-            }
-
             return _partidas
-                .Where(p => p.Modo.Equals(modo, System.StringComparison.OrdinalIgnoreCase))
+                .Where(p => p.Modo.Equals(ModoUnico, System.StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
 
-        public async Task<Partida> CrearPartidaAsync(int usuarioId, string nombrePartida, string modo)
+        public async Task<Partida> CrearPartidaAsync(int usuarioId, string nombrePartida)
         {
             using var scope = _serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<EscobaDbContext>();
@@ -65,7 +62,7 @@ namespace Truco.Net.Logica.Servicios
             {
                 Id = _nextPartidaId++,
                 Nombre = nombrePartida,
-                Modo = string.IsNullOrEmpty(modo) ? "1v1" : modo,
+                Modo = ModoUnico,
                 UsuarioIdCreador = usuario.Id,
                 Creador = creador,
                 JugadoresActuales = 1,
@@ -86,7 +83,16 @@ namespace Truco.Net.Logica.Servicios
             var context = scope.ServiceProvider.GetRequiredService<EscobaDbContext>();
 
             var partida = BuscarPartidaPorID(partidaId);
-            if (partida == null) return false;
+            if (partida == null ||
+                !partida.Modo.Equals(ModoUnico, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+            if (partida.Jugadores.Count >= MaxJugadores &&
+                !partida.Jugadores.Any(j => j.UsuarioId == usuarioId))
+            {
+                return false;
+            }
 
             var usuario = await context.Usuarios.FindAsync(usuarioId);
             if (usuario == null) return false;
@@ -248,7 +254,7 @@ namespace Truco.Net.Logica.Servicios
             {
                 id = partida.Id,
                 nombre = partida.Nombre,
-                modo = partida.Modo,
+                modo = ModoUnico,
                 creador = partida.Creador?.UsuarioAsociado?.Nombre ?? "No disponible",
                 jugadoresActuales = partida.JugadoresActuales
             };
@@ -312,7 +318,7 @@ namespace Truco.Net.Logica.Servicios
             {
                 PartidaId = partida.Id,
                 NombrePartida = partida.Nombre,
-                Modo = partida.Modo,
+                Modo = ModoUnico,
                 Estado = partida.Estado, 
 
                 // Turno

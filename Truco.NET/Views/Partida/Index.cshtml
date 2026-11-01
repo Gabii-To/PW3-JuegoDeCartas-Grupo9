@@ -2,7 +2,6 @@
 @model IEnumerable<Truco.Net.Entidades.Partida>
 @{
     ViewData["Title"] = "Salas Disponibles";
-    string modoActual = ViewBag.ModoFiltro ?? "1v1";
 }
 
 <div class="container my-5">
@@ -17,40 +16,37 @@
     <div class="container-bar mb-4">
         <div class="d-flex justify-content-between align-items-center">
             <h2 class="titulo-bar fs-2 text-start m-0">
-                MESAS DISPONIBLES <span class="subtitulo-neon">(@modoActual.ToUpper())</span>
+                MESAS DISPONIBLES <span class="subtitulo-neon">(1 VS 1)</span>
             </h2>
             
             <!-- Botón que abre el modal para crear mesa -->
-            <button type="button" class="btn btn-bar" data-bs-toggle="modal" data-bs-target="#crearPartidaModal" onclick="setModoPartida('@modoActual')">
+            <button type="button" class="btn btn-bar" data-bs-toggle="modal" data-bs-target="#crearPartidaModal">
                 + Crear Nueva Mesa
             </button>
         </div>
     </div>
 
     <!-- Lista Dinámica de Partidas Activas -->
-    <div class="row g-3" id="listaPartidas" data-modo="@modoActual">
+    <div class="row g-3" id="listaPartidas">
         @if (Model != null && Model.Any())
         {
             @foreach (var partida in Model)
             {
-                bool es4P = partida.Modo.Equals("4p", System.StringComparison.OrdinalIgnoreCase);
-                int maxJugadores = es4P ? 4 : 2;
-
-                <div class="col-md-6 col-lg-4" data-partida-id="@partida.Id" data-modo="@partida.Modo">
+                <div class="col-md-6 col-lg-4" data-partida-id="@partida.Id">
                     <div class="mesa-truco p-3 h-100 d-flex flex-column justify-content-between">
                         <div>
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <h5 class="fw-bold text-white m-0">@partida.Nombre</h5>
-                                <span class="badge @(es4P ? "bg-danger" : "bg-warning text-dark")">
-                                    @(es4P ? "1v1v1v1" : "1 v 1")
+                                <span class="badge bg-warning text-dark">
+                                    1 vs 1
                                 </span>
                             </div>
                             <p class="small text-light opacity-75 mb-3">
-                                Creador: <strong>@(partida.Creador?.UsuarioAsociado?.Nombre ?? "No disponible")</strong> (@partida.JugadoresActuales/@maxJugadores Jugadores)
+                                Creador: <strong>@(partida.Creador?.UsuarioAsociado?.Nombre ?? "No disponible")</strong> (@partida.JugadoresActuales/2 Jugadores)
                             </p>
                         </div>
                         <div>
-                            <a asp-controller="Partida" asp-action="Escoba" asp-route-id="@partida.Id" class="btn @(es4P ? "btn-bar-danger" : "btn-bar") w-100 btn-sm">
+                            <a asp-controller="Partida" asp-action="Escoba" asp-route-id="@partida.Id" class="btn btn-bar w-100 btn-sm">
                                 Unirse a la Mesa
                             </a>
                         </div>
@@ -78,9 +74,6 @@
 
             <form asp-controller="Partida" asp-action="Crear" method="post">
                 <div class="modal-body">
-                    <!-- Campo oculto para el modo -->
-                    <input type="hidden" id="modalModoInput" name="modo" value="@modoActual" />
-
                     <div class="mb-3 text-start">
                         <label for="nombrePartida" class="form-label text-light fw-bold">
                             Nombre de la Partida:
@@ -112,21 +105,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
 
     <script>
-        const modoActual = "@modoActual";
         const listaPartidas = document.getElementById("listaPartidas");
         const urlEscoba = "@Url.Action("Escoba", "Partida")";
 
-        function setModoPartida(modo) {
-            document.getElementById('modalModoInput').value = modo;
-        }
-
-        function normalizarModo(modo) {
-            return (modo || "").toLowerCase();
-        }
-
         function actualizarEstadoVacio() {
-            // El mensaje vacío se agrega o elimina según las tarjetas que
-            // pertenecen al modo actualmente seleccionado.
+            // El mensaje vacío se agrega o elimina según las tarjetas visibles.
             const tienePartidas = listaPartidas.querySelector("[data-partida-id]") !== null;
             const estadoVacio = document.getElementById("sinPartidas");
 
@@ -143,12 +126,9 @@
         function crearTarjetaPartida(partida) {
             // Construimos la tarjeta con textContent en lugar de insertar datos
             // recibidos del servidor como HTML sin procesar.
-            const es4P = normalizarModo(partida.modo) === "4p";
-            const maxJugadores = es4P ? 4 : 2;
             const columna = document.createElement("div");
             columna.className = "col-md-6 col-lg-4";
             columna.dataset.partidaId = partida.id;
-            columna.dataset.modo = partida.modo;
 
             const mesa = document.createElement("div");
             mesa.className = "mesa-truco p-3 h-100 d-flex flex-column justify-content-between";
@@ -163,19 +143,19 @@
             nombre.textContent = partida.nombre;
 
             const badge = document.createElement("span");
-            badge.className = es4P ? "badge bg-danger" : "badge bg-warning text-dark";
-            badge.textContent = es4P ? "1v1v1v1" : "1 v 1";
+            badge.className = "badge bg-warning text-dark";
+            badge.textContent = "1 vs 1";
             encabezado.append(nombre, badge);
 
             const detalles = document.createElement("p");
             detalles.className = "small text-light opacity-75 mb-3";
             detalles.dataset.detallesPartida = "";
-            detalles.textContent = `Creador: ${partida.creador} (${partida.jugadoresActuales}/${maxJugadores} Jugadores)`;
+            detalles.textContent = `Creador: ${partida.creador} (${partida.jugadoresActuales}/2 Jugadores)`;
             contenido.append(encabezado, detalles);
 
             const acciones = document.createElement("div");
             const enlace = document.createElement("a");
-            enlace.className = `${es4P ? "btn-bar-danger" : "btn-bar"} btn w-100 btn-sm`;
+            enlace.className = "btn-bar btn w-100 btn-sm";
             enlace.href = `${urlEscoba}?id=${encodeURIComponent(partida.id)}`;
             enlace.textContent = "Unirse a la Mesa";
             acciones.appendChild(enlace);
@@ -185,24 +165,13 @@
             return columna;
         }
 
-        function perteneceAlModoActual(partida) {
-            // El servidor envía todos los eventos; cada listado decide cuáles
-            // mostrar según el filtro de modo de su propia página.
-            return normalizarModo(partida.modo) === normalizarModo(modoActual);
-        }
-
         function agregarOActualizarPartida(partida) {
-            if (!perteneceAlModoActual(partida)) {
-                return;
-            }
-
             const existente = listaPartidas.querySelector(`[data-partida-id="${partida.id}"]`);
             if (existente) {
                 // Los eventos pueden llegar varias veces o después de una
                 // reconexión; actualizar la tarjeta evita duplicados.
                 const detalles = existente.querySelector("[data-detalles-partida]");
-                const maxJugadores = normalizarModo(partida.modo) === "4p" ? 4 : 2;
-                detalles.textContent = `Creador: ${partida.creador} (${partida.jugadoresActuales}/${maxJugadores} Jugadores)`;
+                detalles.textContent = `Creador: ${partida.creador} (${partida.jugadoresActuales}/2 Jugadores)`;
             } else {
                 listaPartidas.appendChild(crearTarjetaPartida(partida));
             }

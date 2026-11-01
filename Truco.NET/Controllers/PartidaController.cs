@@ -18,26 +18,25 @@ namespace Truco.Net.Controllers
         }
 
         [VerificacionSesion]
-        public IActionResult Index(string modo)
+        public IActionResult Index()
         {
-            ViewBag.ModoFiltro = modo;
-            var partidas = _partidaService.ObtenerPartidasActivas(modo);
+            var partidas = _partidaService.ObtenerPartidasActivas();
             return View(partidas);
         }
 
         [HttpPost]
         [VerificacionSesion]
-        public async Task<IActionResult> Crear(string nombrePartida, string modo)
+        public async Task<IActionResult> Crear(string nombrePartida)
         {
             int usuarioId = HttpContext.Session.GetInt32("UsuarioId")!.Value;
 
             if (string.IsNullOrWhiteSpace(nombrePartida))
             {
                 TempData["ErrorCrear"] = "Debes ingresar un nombre para la partida.";
-                return RedirectToAction("Index", new { modo = modo });
+                return RedirectToAction("Index");
             }
 
-            var nuevaPartida = await _partidaService.CrearPartidaAsync(usuarioId, nombrePartida, modo);
+            var nuevaPartida = await _partidaService.CrearPartidaAsync(usuarioId, nombrePartida);
 
             return RedirectToAction("Escoba", new { id = nuevaPartida.Id });
         }
@@ -47,7 +46,7 @@ namespace Truco.Net.Controllers
         {
             int usuarioId = HttpContext.Session.GetInt32("UsuarioId")!.Value;
 
-            var partida = _partidaService.ObtenerPartidasActivas(null)
+            var partida = _partidaService.ObtenerPartidasActivas()
                                          .Find(p => p.Id == id);
 
             if (partida == null)
