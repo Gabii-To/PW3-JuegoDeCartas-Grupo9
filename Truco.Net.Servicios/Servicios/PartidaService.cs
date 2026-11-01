@@ -89,6 +89,10 @@ namespace Truco.Net.Logica.Servicios
             if (usuario == null) return false;
 
             var jugador = partida.Jugadores.FirstOrDefault(j => j.UsuarioId == usuarioId);
+            // La vista se carga por HTTP y luego vuelve a registrarse mediante SignalR.
+            // Si el jugador ya estaba en la partida, solo actualizamos su conexión y
+            // evitamos emitir un evento que volvería a dibujarlo en la lista.
+            bool jugadorNuevo = jugador == null;
             if (jugador != null)
             {
                 // Reconexión: actualizamos su ConnectionId
@@ -108,8 +112,11 @@ namespace Truco.Net.Logica.Servicios
                 partida.JugadoresActuales = partida.Jugadores.Count;
             }
 
-            await _hubContext.Clients.Group(partida.Id.ToString())
-                .SendAsync("ActualizarJugadores", partida.JugadoresActuales, usuario.Nombre);
+            if (jugadorNuevo)
+            {
+                await _hubContext.Clients.Group(partida.Id.ToString())
+                    .SendAsync("ActualizarJugadores", partida.JugadoresActuales, usuario.Nombre);
+            }
 
             return true;
         }
@@ -153,6 +160,37 @@ namespace Truco.Net.Logica.Servicios
                     }
                 }
             }
+        }
+
+        // Se utiliza al cerrar sesión para liberar al usuario de cualquier mesa
+        // que todavía conserve su jugador en memoria.
+        public async Task RemoverJugadorDeTodasLasPartidas(int usuarioId)
+        {
+            var partidasDelUsuario = _partidas
+                .Where(p => p.Jugadores.Any(j => j.UsuarioId == usuarioId))
+                .Select(p => p.Id)
+                .ToList();
+
+            foreach (var partidaId in partidasDelUsuario)
+            {
+                await RemoverJugadorDePartida(partidaId, usuarioId);
+            }
+        }
+
+        // Elimina al jugador solo si la conexión que se desconectó sigue siendo
+        // la conexión activa. Esto evita expulsarlo si se reconectó rápidamente
+        // con un nuevo ConnectionId.
+        public async Task RemoverJugadorPorConexionAsync(int partidaId, int usuarioId, string connectionId)
+        {
+            var partida = BuscarPartidaPorID(partidaId);
+            var jugador = partida?.Jugadores.FirstOrDefault(j => j.UsuarioId == usuarioId);
+
+            if (jugador == null || jugador.ConnectionId != connectionId)
+            {
+                return;
+            }
+
+            await RemoverJugadorDePartida(partidaId, usuarioId);
         }
 
         private void EliminarPartidasFantasmas(int usuarioIdCreador)

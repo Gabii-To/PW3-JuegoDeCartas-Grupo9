@@ -46,9 +46,11 @@
         </ul>
 
         <div class="mt-4">
-            <a asp-controller="Partida" asp-action="Salir" asp-route-id="@Model.Id" class="btn btn-secondary btn-sm">
+            @* El abandono se procesa por SignalR antes de redirigir para que
+               el resto de jugadores reciba la actualización inmediatamente. *@
+            <button type="button" id="salirMesa" class="btn btn-secondary btn-sm">
                 Salir de la Mesa
-            </a>
+            </button>
         </div>
 
         @* Las cartas de la mesa llegan desde el modelo armado por PartidaService. *@
@@ -83,6 +85,10 @@
         const partidaId = "@Model.Id";
         const usuarioId = @(Context.Session.GetInt32("UsuarioId") ?? 0);
         const maxJugadores = @maxJugadores; // Pasamos el límite desde C# a JS
+        const urlSalir = "@Url.Action("Salir", "Partida", new { id = Model.Id })";
+        // Evita que el evento de abandono recargue esta página mientras el
+        // usuario está saliendo voluntariamente de la mesa.
+        let saliendo = false;
 
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/partidahub")
@@ -108,6 +114,10 @@
         });
 
         connection.on("JugadorAbandono", function(nombreJugadorQueSeFue) {
+            if (saliendo) {
+                return;
+            }
+
             // Recargamos la página si alguien se va para actualizar estados y contadores
             location.reload();
         });
@@ -120,6 +130,25 @@
             });
         }).catch(function(err) {
             return console.error(err.toString());
+        });
+
+        document.getElementById("salirMesa").addEventListener("click", async function() {
+            const boton = this;
+            saliendo = true;
+            boton.disabled = true;
+
+            try {
+                // Primero quitamos al jugador del grupo y de la partida; después
+                // cerramos SignalR y navegamos a la lista de mesas.
+                if (connection.state === signalR.HubConnectionState.Connected) {
+                    await connection.invoke("SalirDeMesa", partidaId, usuarioId);
+                    await connection.stop();
+                }
+            } catch (err) {
+                console.error("No se pudo cerrar la conexión de la mesa:", err);
+            } finally {
+                window.location.href = urlSalir;
+            }
         });
     </script>
 }

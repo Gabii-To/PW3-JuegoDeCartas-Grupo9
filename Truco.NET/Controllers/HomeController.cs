@@ -4,6 +4,7 @@ using System.Diagnostics;
 using Truco.Net.Servicios;
 using Truco.NET.Models;
 using Truco.Net.Entidades;
+using Truco.Net.Logica.Servicios;
 
 namespace Truco.NET.Controllers
 {
@@ -12,15 +13,18 @@ namespace Truco.NET.Controllers
 
 
         private readonly HomeService _homeService;
+        private readonly PartidaService _partidaService;
 
 
         public HomeController(
 
-            IHomeService homeService)
+            IHomeService homeService,
+            PartidaService partidaService)
         {
 
 
             _homeService = (HomeService?)homeService;
+            _partidaService = partidaService;
         }
         public IActionResult Index()
         {
@@ -76,8 +80,18 @@ namespace Truco.NET.Controllers
         }
         */
 
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
+            var usuarioId = HttpContext.Session.GetInt32("UsuarioId");
+
+            if (usuarioId.HasValue)
+            {
+                // La sesión y las partidas se almacenan por separado. Por eso,
+                // cerrar la sesión también debe retirar al usuario de las mesas
+                // antes de borrar sus datos de sesión.
+                await _partidaService.RemoverJugadorDeTodasLasPartidas(usuarioId.Value);
+            }
+
             // Limpia todas las variables guardadas en la sesión
             HttpContext.Session.Clear();
             TempData["MensajeSuccess"] = "Has cerrado sesión correctamente.";
