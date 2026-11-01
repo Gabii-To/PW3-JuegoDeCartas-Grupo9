@@ -50,6 +50,29 @@
                 Salir de la Mesa
             </a>
         </div>
+
+        @* Las cartas de la mesa llegan desde el modelo armado por PartidaService. *@
+        @if (Model.CartasEnMesa.Any())
+        {
+            <section class="mt-5">
+                <h5 class="text-light mb-3">Cartas en la mesa</h5>
+                <div class="cartas-preview">
+                    @foreach (var carta in Model.CartasEnMesa)
+                    {
+                        @* La ruta de la imagen se obtiene directamente desde Carta.RutaImagen. *@
+                        @* Si falta un archivo, el evento onerror muestra una carta de reemplazo. *@
+                        <figure class="carta-preview">
+                            <img src="@carta.RutaImagen"
+                                 alt="@carta.Nombre"
+                                 class="carta-imagen"
+                                 loading="lazy"
+                                 onerror="this.onerror=null; this.src='/Assets/cartas/carta-fallback.svg';" />
+                            <figcaption class="small text-light">@carta.Nombre</figcaption>
+                        </figure>
+                    }
+                </div>
+            </section>
+        }
     </div>
 </div>
 
@@ -58,6 +81,7 @@
 
     <script>
         const partidaId = "@Model.Id";
+        const usuarioId = @(Context.Session.GetInt32("UsuarioId") ?? 0);
         const maxJugadores = @maxJugadores; // Pasamos el límite desde C# a JS
 
         const connection = new signalR.HubConnectionBuilder()
@@ -90,7 +114,8 @@
 
         connection.start().then(function() {
             console.log("Conectado a SignalR con éxito.");
-            connection.invoke("UnirseAMesa", partidaId).catch(function(err) {
+            // El Hub necesita ambos identificadores para asociar la conexión al jugador.
+            connection.invoke("UnirseAMesa", partidaId, usuarioId).catch(function(err) {
                 return console.error(err.toString());
             });
         }).catch(function(err) {
