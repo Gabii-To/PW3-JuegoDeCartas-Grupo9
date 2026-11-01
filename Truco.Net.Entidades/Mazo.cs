@@ -10,11 +10,18 @@ namespace Truco.Net.Entidades
         [Key]
         public int Id { get; set; }
 
+        // Colección de cartas disponibles. Las cartas repartidas se quitan de esta lista.
         public List<Carta> Cartas { get; set; } = new List<Carta>();
 
+        public Mazo()
+        {
+            // Cada mazo nuevo comienza con las 40 cartas de la baraja española.
+            InicializarMazoEspanol();
+        }
 
         public void InicializarMazoEspanol()
         {
+            // Se limpia el mazo para permitir reiniciar una partida sin duplicar cartas.
             Cartas.Clear();
             string[] palos = { "Oros", "Copas", "Espadas", "Bastos" };
             int[] numeros = { 1, 2, 3, 4, 5, 6, 7, 10, 11, 12 }; 
@@ -23,6 +30,7 @@ namespace Truco.Net.Entidades
             {
                 foreach (var num in numeros)
                 {
+                    // Cada combinación de palo y número representa una carta única.
                     Cartas.Add(new Carta
                     {
                         Palo = palo,
@@ -34,6 +42,7 @@ namespace Truco.Net.Entidades
 
         public void MezclarCartas()
         {
+            // Reordena las cartas antes de repartirlas para que la partida sea aleatoria.
             Random rng = new Random();
             Cartas = Cartas.OrderBy(_ => rng.Next()).ToList();
         }
@@ -46,6 +55,7 @@ namespace Truco.Net.Entidades
             {
                 if (Cartas.Count > 0)
                 {
+                    // Siempre se toma la primera carta y se elimina del mazo para no repartirla dos veces.
                     var carta = Cartas[0];
                     Cartas.RemoveAt(0); 
                     cartasRepartidas.Add(carta);

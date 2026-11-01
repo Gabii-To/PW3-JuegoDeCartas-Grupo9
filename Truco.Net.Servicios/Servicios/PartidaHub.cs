@@ -1,11 +1,14 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
-using System.Text.RegularExpressions;
 
 namespace Truco.Net.Logica.Servicios
 {
     public class PartidaHub : Hub
     {
+        // Grupo compartido por todas las conexiones que están viendo el listado
+        // de salas. Permite notificar cambios sin recargar la página.
+        public const string LobbyGroup = "lobby";
+
         private readonly PartidaService _partidaService;
 
         // Solo guardamos la relación: ConnectionId de la pestaña -> ID de la partida
@@ -16,17 +19,37 @@ namespace Truco.Net.Logica.Servicios
             _partidaService = partidaService;
         }
 
+        public Task UnirseAlLobby()
+        {
+            // La vista Partida/Index se suscribe a este grupo al abrirse.
+            return Groups.AddToGroupAsync(Context.ConnectionId, LobbyGroup);
+        }
+
+        public Task SalirDelLobby()
+        {
+            // Se mantiene como operación explícita para poder abandonar el lobby
+            // si en el futuro la vista cambia de sección sin cerrar la conexión.
+            return Groups.RemoveFromGroupAsync(Context.ConnectionId, LobbyGroup);
+        }
+
         public async Task UnirseAMesa(string partidaIdStr, int usuarioId)
         {
             if (int.TryParse(partidaIdStr, out int partidaId))
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, partidaIdStr);
 
-                // Registramos en el servicio usando el ID numérico del usuario
-                await _partidaService.UnirseAPartidaAsync(partidaId, usuarioId, Context.ConnectionId);
+                // Registramos la conexión en la partida. Si la partida ya no existe
+                // o el usuario no puede unirse, quitamos la conexión del grupo.
+                var seUnio = await _partidaService.UnirseAPartidaAsync(partidaId, usuarioId, Context.ConnectionId);
 
-                // Guardamos a qué partida pertenece esta conexión
-                _conexionPartida[Context.ConnectionId] = partidaId;
+                if (seUnio)
+                {
+                    _conexionPartida[Context.ConnectionId] = partidaId;
+                }
+                else
+                {
+                    await Groups.RemoveFromGroupAsync(Context.ConnectionId, partidaIdStr);
+                }
             }
         }
 
@@ -48,17 +71,18 @@ namespace Truco.Net.Logica.Servicios
             // Si esta conexión pertenecía a una partida, la recuperamos con el ID
             if (_conexionPartida.TryRemove(Context.ConnectionId, out int partidaId))
             {
-                // ⏳ Esperamos los 5 segundos del temporizador
+                var jugador = _partidaService.BuscarJugadorPorConnectionId(Context.ConnectionId).jugador;
+
+                // Esperamos unos segundos para diferenciar una caída momentánea
+                // de una salida real antes de eliminar al jugador de la mesa.
                 await Task.Delay(5000);
 
-                // Verificamos si el ConnectionId sigue sin estar en el diccionario 
-                // (Si se hubiera reconectado, su ConnectionId habría cambiado por uno nuevo)
-                bool sigueDesconectado = !_conexionPartida.ContainsKey(Context.ConnectionId);
-
-                if (sigueDesconectado)
+                if (jugador != null)
                 {
-                    // Como no tenemos el nombre exacto aquí, podemos pedirle al servicio 
-                    // que limpie las conexiones muertas o manejarlo por ID de partida.
+                    await _partidaService.RemoverJugadorPorConexionAsync(
+                        partidaId,
+                        jugador.UsuarioId,
+                        Context.ConnectionId);
                 }
             }
 

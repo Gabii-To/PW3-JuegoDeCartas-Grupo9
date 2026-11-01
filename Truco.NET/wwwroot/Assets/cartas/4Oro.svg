@@ -1,0 +1,6 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="240" height="340" viewBox="0 0 240 340" role="img" aria-label="4 de Oro">
+  <rect x="5" y="5" width="230" height="330" rx="14" fill="#f7f0df" stroke="#3d2314" stroke-width="10"/>
+  <text x="24" y="58" font-family="Georgia, serif" font-size="42" font-weight="bold" fill="#a32626">4</text>
+  <text x="120" y="178" text-anchor="middle" font-family="Georgia, serif" font-size="30" font-weight="bold" fill="#a32626">Oro</text>
+  <text x="216" y="315" text-anchor="end" font-family="Georgia, serif" font-size="42" font-weight="bold" fill="#a32626">4</text>
+</svg>

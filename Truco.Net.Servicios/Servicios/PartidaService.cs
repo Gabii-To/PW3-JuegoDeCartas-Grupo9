@@ -12,6 +12,8 @@ namespace Truco.Net.Logica.Servicios
 {
     public class PartidaService
     {
+        private const string ModoUnico = "1v1";
+        private const int MaxJugadores = 2;
         private static readonly List<Partida> _partidas = new();
         private static int _nextPartidaId = 1;
         private static int _nextJugadorId = 1;
@@ -26,19 +28,14 @@ namespace Truco.Net.Logica.Servicios
             _serviceProvider = serviceProvider;
         }
 
-        public List<Partida> ObtenerPartidasActivas(string modo)
+        public List<Partida> ObtenerPartidasActivas()
         {
-            if (string.IsNullOrEmpty(modo))
-            {
-                return _partidas.ToList();
-            }
-
             return _partidas
-                .Where(p => p.Modo.Equals(modo, System.StringComparison.OrdinalIgnoreCase))
+                .Where(p => p.Modo.Equals(ModoUnico, System.StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
 
-        public async Task<Partida> CrearPartidaAsync(int usuarioId, string nombrePartida, string modo)
+        public async Task<Partida> CrearPartidaAsync(int usuarioId, string nombrePartida)
         {
             using var scope = _serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<EscobaDbContext>();
@@ -49,7 +46,7 @@ namespace Truco.Net.Logica.Servicios
                 throw new Exception("El usuario no está registrado en la base de datos.");
             }
 
-            EliminarPartidasFantasmas(usuario.Id);
+            await EliminarPartidasFantasmasAsync(usuario.Id);
 
             var creador = new Jugador
             {
@@ -65,13 +62,17 @@ namespace Truco.Net.Logica.Servicios
             {
                 Id = _nextPartidaId++,
                 Nombre = nombrePartida,
-                Modo = string.IsNullOrEmpty(modo) ? "1v1" : modo,
+                Modo = ModoUnico,
                 UsuarioIdCreador = usuario.Id,
+                Creador = creador,
                 JugadoresActuales = 1,
                 Jugadores = new List<Jugador> { creador }
             };
 
             _partidas.Add(nuevaPartida);
+            // Avisamos a los clientes del lobby después de agregar la sala
+            // para que puedan mostrarla inmediatamente en el listado.
+            await NotificarSalaCreada(nuevaPartida);
             return nuevaPartida;
         }
 
@@ -82,12 +83,25 @@ namespace Truco.Net.Logica.Servicios
             var context = scope.ServiceProvider.GetRequiredService<EscobaDbContext>();
 
             var partida = BuscarPartidaPorID(partidaId);
-            if (partida == null) return false;
+            if (partida == null ||
+                !partida.Modo.Equals(ModoUnico, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+            if (partida.Jugadores.Count >= MaxJugadores &&
+                !partida.Jugadores.Any(j => j.UsuarioId == usuarioId))
+            {
+                return false;
+            }
 
             var usuario = await context.Usuarios.FindAsync(usuarioId);
             if (usuario == null) return false;
 
             var jugador = partida.Jugadores.FirstOrDefault(j => j.UsuarioId == usuarioId);
+            // La vista se carga por HTTP y luego vuelve a registrarse mediante SignalR.
+            // Si el jugador ya estaba en la partida, solo actualizamos su conexión y
+            // evitamos emitir un evento que volvería a dibujarlo en la lista.
+            bool jugadorNuevo = jugador == null;
             if (jugador != null)
             {
                 // Reconexión: actualizamos su ConnectionId
@@ -107,8 +121,14 @@ namespace Truco.Net.Logica.Servicios
                 partida.JugadoresActuales = partida.Jugadores.Count;
             }
 
-            await _hubContext.Clients.Group(partida.Id.ToString())
-                .SendAsync("ActualizarJugadores", partida.JugadoresActuales, usuario.Nombre);
+            if (jugadorNuevo)
+            {
+                await _hubContext.Clients.Group(partida.Id.ToString())
+                    .SendAsync("ActualizarJugadores", partida.JugadoresActuales, usuario.Nombre);
+                // El contador de jugadores también se refleja en las tarjetas
+                // que están viendo los usuarios del lobby.
+                await NotificarSalaActualizada(partida);
+            }
 
             return true;
         }
@@ -143,18 +163,55 @@ namespace Truco.Net.Logica.Servicios
                     if (partida.Jugadores.Count == 0)
                     {
                         _partidas.Remove(partida);
+                        // Una sala sin jugadores deja de estar disponible para
+                        // todos los clientes que todavía están en el listado.
+                        await NotificarSalaEliminada(partida);
                     }
                     else
                     {
 
                         await _hubContext.Clients.Group(partidaId.ToString())
                             .SendAsync("JugadorAbandono", nombreUsuario);
+                        // Si todavía quedan jugadores, la sala continúa visible,
+                        // pero el contador debe actualizarse en el lobby.
+                        await NotificarSalaActualizada(partida);
                     }
                 }
             }
         }
 
-        private void EliminarPartidasFantasmas(int usuarioIdCreador)
+        // Se utiliza al cerrar sesión para liberar al usuario de cualquier mesa
+        // que todavía conserve su jugador en memoria.
+        public async Task RemoverJugadorDeTodasLasPartidas(int usuarioId)
+        {
+            var partidasDelUsuario = _partidas
+                .Where(p => p.Jugadores.Any(j => j.UsuarioId == usuarioId))
+                .Select(p => p.Id)
+                .ToList();
+
+            foreach (var partidaId in partidasDelUsuario)
+            {
+                await RemoverJugadorDePartida(partidaId, usuarioId);
+            }
+        }
+
+        // Elimina al jugador solo si la conexión que se desconectó sigue siendo
+        // la conexión activa. Esto evita expulsarlo si se reconectó rápidamente
+        // con un nuevo ConnectionId.
+        public async Task RemoverJugadorPorConexionAsync(int partidaId, int usuarioId, string connectionId)
+        {
+            var partida = BuscarPartidaPorID(partidaId);
+            var jugador = partida?.Jugadores.FirstOrDefault(j => j.UsuarioId == usuarioId);
+
+            if (jugador == null || jugador.ConnectionId != connectionId)
+            {
+                return;
+            }
+
+            await RemoverJugadorDePartida(partidaId, usuarioId);
+        }
+
+        private async Task EliminarPartidasFantasmasAsync(int usuarioIdCreador)
         {
             // Cambiamos p.UsuarioId por p.UsuarioIdCreador
             var partidasAnteriores = _partidas.Where(p => p.UsuarioIdCreador == usuarioIdCreador).ToList();
@@ -162,7 +219,45 @@ namespace Truco.Net.Logica.Servicios
             foreach (var partidaAntigua in partidasAnteriores)
             {
                 _partidas.Remove(partidaAntigua);
+                // Crear una nueva sala reemplaza la anterior del mismo creador;
+                // también informamos ese borrado a los clientes conectados.
+                await NotificarSalaEliminada(partidaAntigua);
             }
+        }
+
+        private Task NotificarSalaCreada(Partida partida)
+        {
+            // Se envía un resumen y no la entidad completa para exponer solo
+            // los datos necesarios para construir la tarjeta en JavaScript.
+            return _hubContext.Clients.Group(PartidaHub.LobbyGroup)
+                .SendAsync("SalaCreada", CrearResumenSala(partida));
+        }
+
+        private Task NotificarSalaEliminada(Partida partida)
+        {
+            // Para eliminar una tarjeta solo hace falta identificar la partida.
+            return _hubContext.Clients.Group(PartidaHub.LobbyGroup)
+                .SendAsync("SalaEliminada", new { id = partida.Id });
+        }
+
+        private Task NotificarSalaActualizada(Partida partida)
+        {
+            // Se reutiliza el mismo formato de resumen para crear o actualizar
+            // una tarjeta existente sin duplicarla.
+            return _hubContext.Clients.Group(PartidaHub.LobbyGroup)
+                .SendAsync("SalaActualizada", CrearResumenSala(partida));
+        }
+
+        private static object CrearResumenSala(Partida partida)
+        {
+            return new
+            {
+                id = partida.Id,
+                nombre = partida.Nombre,
+                modo = ModoUnico,
+                creador = partida.Creador?.UsuarioAsociado?.Nombre ?? "No disponible",
+                jugadoresActuales = partida.JugadoresActuales
+            };
         }
 
         private static Partida? BuscarPartidaPorID(int partidaId)
@@ -223,7 +318,7 @@ namespace Truco.Net.Logica.Servicios
             {
                 PartidaId = partida.Id,
                 NombrePartida = partida.Nombre,
-                Modo = partida.Modo,
+                Modo = ModoUnico,
                 Estado = partida.Estado, 
 
                 // Turno

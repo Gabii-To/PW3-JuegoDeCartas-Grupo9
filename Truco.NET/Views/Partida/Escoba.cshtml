@@ -2,10 +2,7 @@
 @{
     ViewData["Title"] = Model.Nombre;
 
-    // Determinamos el máximo de jugadores según el modo
-    bool es4P = Model.Modo.Equals("4p", System.StringComparison.OrdinalIgnoreCase) ||
-                Model.Modo.Equals("1v1v1v1", System.StringComparison.OrdinalIgnoreCase);
-    int maxJugadores = es4P ? 4 : 2;
+    const int maxJugadores = 2;
     int jugadoresActuales = Model.Jugadores?.Count ?? 1;
     bool salaLlena = jugadoresActuales >= maxJugadores;
 }
@@ -13,7 +10,7 @@
 <div class="container my-5 text-center">
     <div class="container-bar mb-4 p-4 mesa-truco">
         <h2 class="titulo-bar fs-2 text-white m-0">
-            @Model.Nombre <span class="subtitulo-neon">(@Model.Modo.ToUpper())</span>
+            @Model.Nombre <span class="subtitulo-neon">(1 VS 1)</span>
         </h2>
         <hr class="border-secondary my-3">
 
@@ -46,10 +43,35 @@
         </ul>
 
         <div class="mt-4">
-            <a asp-controller="Partida" asp-action="Salir" asp-route-id="@Model.Id" class="btn btn-secondary btn-sm">
+            @* El abandono se procesa por SignalR antes de redirigir para que
+               el resto de jugadores reciba la actualización inmediatamente. *@
+            <button type="button" id="salirMesa" class="btn btn-secondary btn-sm">
                 Salir de la Mesa
-            </a>
+            </button>
         </div>
+
+        @* Las cartas de la mesa llegan desde el modelo armado por PartidaService. *@
+        @if (Model.CartasEnMesa.Any())
+        {
+            <section class="mt-5">
+                <h5 class="text-light mb-3">Cartas en la mesa</h5>
+                <div class="cartas-preview">
+                    @foreach (var carta in Model.CartasEnMesa)
+                    {
+                        @* La ruta de la imagen se obtiene directamente desde Carta.RutaImagen. *@
+                        @* Si falta un archivo, el evento onerror muestra una carta de reemplazo. *@
+                        <figure class="carta-preview">
+                            <img src="@carta.RutaImagen"
+                                 alt="@carta.Nombre"
+                                 class="carta-imagen"
+                                 loading="lazy"
+                                 onerror="this.onerror=null; this.src='/Assets/cartas/carta-fallback.svg';" />
+                            <figcaption class="small text-light">@carta.Nombre</figcaption>
+                        </figure>
+                    }
+                </div>
+            </section>
+        }
     </div>
 </div>
 
@@ -58,7 +80,12 @@
 
     <script>
         const partidaId = "@Model.Id";
+        const usuarioId = @(Context.Session.GetInt32("UsuarioId") ?? 0);
         const maxJugadores = @maxJugadores; // Pasamos el límite desde C# a JS
+        const urlSalir = "@Url.Action("Salir", "Partida", new { id = Model.Id })";
+        // Evita que el evento de abandono recargue esta página mientras el
+        // usuario está saliendo voluntariamente de la mesa.
+        let saliendo = false;
 
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/partidahub")
@@ -84,17 +111,41 @@
         });
 
         connection.on("JugadorAbandono", function(nombreJugadorQueSeFue) {
+            if (saliendo) {
+                return;
+            }
+
             // Recargamos la página si alguien se va para actualizar estados y contadores
             location.reload();
         });
 
         connection.start().then(function() {
             console.log("Conectado a SignalR con éxito.");
-            connection.invoke("UnirseAMesa", partidaId).catch(function(err) {
+            // El Hub necesita ambos identificadores para asociar la conexión al jugador.
+            connection.invoke("UnirseAMesa", partidaId, usuarioId).catch(function(err) {
                 return console.error(err.toString());
             });
         }).catch(function(err) {
             return console.error(err.toString());
+        });
+
+        document.getElementById("salirMesa").addEventListener("click", async function() {
+            const boton = this;
+            saliendo = true;
+            boton.disabled = true;
+
+            try {
+                // Primero quitamos al jugador del grupo y de la partida; después
+                // cerramos SignalR y navegamos a la lista de mesas.
+                if (connection.state === signalR.HubConnectionState.Connected) {
+                    await connection.invoke("SalirDeMesa", partidaId, usuarioId);
+                    await connection.stop();
+                }
+            } catch (err) {
+                console.error("No se pudo cerrar la conexión de la mesa:", err);
+            } finally {
+                window.location.href = urlSalir;
+            }
         });
     </script>
 }
