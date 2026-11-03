@@ -269,3 +269,15 @@ footer {
     letter-spacing: 0.5px;
     box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.8);
 }
+
+/* Dorso de carta: representa las cartas ocultas del rival. */
+.carta-dorso {
+    width: 76px;
+    height: 108px;
+    margin: 0 auto 6px;
+    border: 2px solid #f0e6d2;
+    border-radius: 6px;
+    background-color: #8b1a1a;
+    background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 0, rgba(255, 255, 255, 0.15) 4px, transparent 4px, transparent 10px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.55);
+}

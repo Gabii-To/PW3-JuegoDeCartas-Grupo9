@@ -1,46 +1,111 @@
-﻿@model Truco.Net.Entidades.Partida
+﻿@* Vista fuertemente tipada con un ViewModel: no recibe la entidad Partida completa,
+   así el HTML nunca incluye las cartas del rival. *@
+@model Truco.Net.Entidades.PartidaViewModel
 @{
-    ViewData["Title"] = Model.Nombre;
+    ViewData["Title"] = Model.NombrePartida;
 
     const int maxJugadores = 2;
-    int jugadoresActuales = Model.Jugadores?.Count ?? 1;
-    bool salaLlena = jugadoresActuales >= maxJugadores;
+    int jugadoresActuales = Model.Jugadores.Count;
+    int miUsuarioId = Context.Session.GetInt32("UsuarioId") ?? 0;
+
+    bool enEspera = Model.Estado == Truco.Net.Entidades.EnumPartida.EnEspera;
+    bool enCurso = Model.Estado == Truco.Net.Entidades.EnumPartida.EnCurso;
+
+    // Datos del rival y de quien tiene el turno (el rival puede no existir mientras se espera).
+    var rival = Model.Jugadores.FirstOrDefault(j => j.UsuarioId != miUsuarioId);
+    var jugadorEnTurno = Model.Jugadores.FirstOrDefault(j => j.UsuarioId == Model.TurnoJugadorUsuarioId);
+
+    string claseEstado = enEspera ? "alert-warning text-warning border-warning"
+                       : enCurso ? "alert-success text-success border-success"
+                       : "alert-secondary text-light border-secondary";
 }
 
 <div class="container my-5 text-center">
     <div class="container-bar mb-4 p-4 mesa-truco">
         <h2 class="titulo-bar fs-2 text-white m-0">
-            @Model.Nombre <span class="subtitulo-neon">(1 VS 1)</span>
+            @Model.NombrePartida <span class="subtitulo-neon">(1 VS 1)</span>
         </h2>
         <hr class="border-secondary my-3">
 
         <!-- Estado de la partida dinámico al cargar -->
-        <div id="estadoPartida" class="alert @(salaLlena ? "alert-success text-success border-success" : "alert-warning text-warning border-warning") bg-dark py-2 mb-4 d-inline-block px-4">
-            @if (salaLlena)
+        <div id="estadoPartida" class="alert @claseEstado bg-dark py-2 mb-4 d-inline-block px-4">
+            @if (enEspera)
             {
-                @:🚀 Estado: <strong>¡Sala llena! Comenzando partida...</strong>
+                <span>⏳ Estado: <strong>Esperando jugadores (@jugadoresActuales/@maxJugadores)...</strong></span>
+            }
+            else if (enCurso && Model.EsMiTurno)
+            {
+                <span>🎴 Estado: <strong>¡Es tu turno!</strong></span>
+            }
+            else if (enCurso)
+            {
+                <span>🎴 Estado: <strong>Turno de @(jugadorEnTurno?.Nombre ?? "tu rival")</strong></span>
             }
             else
             {
-                @:⏳ Estado: <strong>Esperando jugadores (@jugadoresActuales/@maxJugadores)...</strong>
+                <span>🏁 Estado: <strong>Partida finalizada</strong></span>
             }
         </div>
 
-        <h5 class="text-light mb-3">Jugadores en la Mesa:</h5>
+        @if (enEspera)
+        {
+            <h5 class="text-light mb-3">Jugadores en la Mesa:</h5>
 
-        <!-- Lista dinámica de jugadores -->
-        <ul id="listaJugadores" class="list-group list-group-flush mx-auto" style="max-width: 400px;">
-            @if (Model.Jugadores != null)
-            {
+            <!-- Lista dinámica de jugadores -->
+            <ul id="listaJugadores" class="list-group list-group-flush mx-auto" style="max-width: 400px;">
                 @foreach (var j in Model.Jugadores)
                 {
                     <li class="list-group-item bg-dark text-light border-secondary d-flex justify-content-between align-items-center">
-                        <span>@j.UsuarioAsociado.Nombre</span>
+                        <span>@j.Nombre</span>
                         <span class="badge bg-success">Conectado</span>
                     </li>
                 }
-            }
-        </ul>
+            </ul>
+        }
+
+        @if (enCurso)
+        {
+            @* Cartas del rival: solo se conoce la cantidad, se dibujan como dorsos. *@
+            <section class="mt-4">
+                <h5 class="text-light mb-3">
+                    @(rival?.Nombre ?? "Rival")
+                    <span class="badge bg-secondary">@(rival?.Puntos ?? 0) pts</span>
+                </h5>
+                <div class="cartas-preview">
+                    @for (int i = 0; i < (rival?.CantidadCartasMano ?? 0); i++)
+                    {
+                        <figure class="carta-preview" title="Carta oculta">
+                            <div class="carta-dorso"></div>
+                        </figure>
+                    }
+                </div>
+            </section>
+
+            @* Cartas de la mesa *@
+            <section class="mt-4">
+                <h5 class="text-light mb-3">Cartas en la mesa</h5>
+                <div class="cartas-preview">
+                    @foreach (var carta in Model.CartasEnMesa)
+                    {
+                        <partial name="_Carta" model="carta" />
+                    }
+                </div>
+            </section>
+
+            @* Mis cartas *@
+            <section class="mt-4">
+                <h5 class="text-light mb-3">
+                    Tus cartas
+                    <span class="badge bg-secondary">@(Model.Jugadores.FirstOrDefault(j => j.UsuarioId == miUsuarioId)?.Puntos ?? 0) pts</span>
+                </h5>
+                <div class="cartas-preview">
+                    @foreach (var carta in Model.MisCartas)
+                    {
+                        <partial name="_Carta" model="carta" />
+                    }
+                </div>
+            </section>
+        }
 
         <div class="mt-4">
             @* El abandono se procesa por SignalR antes de redirigir para que
@@ -49,29 +114,6 @@
                 Salir de la Mesa
             </button>
         </div>
-
-        @* Las cartas de la mesa llegan desde el modelo armado por PartidaService. *@
-        @if (Model.CartasEnMesa.Any())
-        {
-            <section class="mt-5">
-                <h5 class="text-light mb-3">Cartas en la mesa</h5>
-                <div class="cartas-preview">
-                    @foreach (var carta in Model.CartasEnMesa)
-                    {
-                        @* La ruta de la imagen se obtiene directamente desde Carta.RutaImagen. *@
-                        @* Si falta un archivo, el evento onerror muestra una carta de reemplazo. *@
-                        <figure class="carta-preview">
-                            <img src="@carta.RutaImagen"
-                                 alt="@carta.Nombre"
-                                 class="carta-imagen"
-                                 loading="lazy"
-                                 onerror="this.onerror=null; this.src='/Assets/cartas/carta-fallback.svg';" />
-                            <figcaption class="small text-light">@carta.Nombre</figcaption>
-                        </figure>
-                    }
-                </div>
-            </section>
-        }
     </div>
 </div>
 
@@ -79,26 +121,32 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
 
     <script>
-        const partidaId = "@Model.Id";
-        const usuarioId = @(Context.Session.GetInt32("UsuarioId") ?? 0);
+        const partidaId = "@Model.PartidaId";
+        const usuarioId = @miUsuarioId;
         const maxJugadores = @maxJugadores; // Pasamos el límite desde C# a JS
-        const urlSalir = "@Url.Action("Salir", "Partida", new { id = Model.Id })";
+        const urlSalir = "@Url.Action("Salir", "Partida", new { id = Model.PartidaId })";
         // Evita que el evento de abandono recargue esta página mientras el
         // usuario está saliendo voluntariamente de la mesa.
         let saliendo = false;
 
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/partidahub")
+            .withAutomaticReconnect()
             .build();
 
         connection.on("ActualizarJugadores", function(cantidadActual, nuevoJugadorNombre) {
             const lista = document.getElementById("listaJugadores");
+            const estadoDiv = document.getElementById("estadoPartida");
+
+            // Si la partida ya está en curso estos elementos no existen en la vista.
+            if (!lista || !estadoDiv) {
+                return;
+            }
+
             const li = document.createElement("li");
             li.className = "list-group-item bg-dark text-light border-secondary d-flex justify-content-between align-items-center";
             li.innerHTML = `<span>${nuevoJugadorNombre}</span> <span class="badge bg-success">Conectado</span>`;
             lista.appendChild(li);
-
-            const estadoDiv = document.getElementById("estadoPartida");
 
             // Validamos si la sala se llenó con este nuevo ingreso
             if (cantidadActual >= maxJugadores) {
@@ -110,6 +158,15 @@
             }
         });
 
+        // El servidor repartió las cartas: recargamos para ver nuestra mano y la mesa.
+        connection.on("PartidaIniciada", function() {
+            if (saliendo) {
+                return;
+            }
+
+            location.reload();
+        });
+
         connection.on("JugadorAbandono", function(nombreJugadorQueSeFue) {
             if (saliendo) {
                 return;
@@ -117,6 +174,14 @@
 
             // Recargamos la página si alguien se va para actualizar estados y contadores
             location.reload();
+        });
+
+        // Al reconectar, SignalR crea una nueva conexión y los grupos no se
+        // conservan: hay que volver a unirse a la mesa.
+        connection.onreconnected(function() {
+            connection.invoke("UnirseAMesa", partidaId, usuarioId).catch(function(err) {
+                return console.error(err.toString());
+            });
         });
 
         connection.start().then(function() {

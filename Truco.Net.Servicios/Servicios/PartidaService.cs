@@ -123,11 +123,24 @@ namespace Truco.Net.Logica.Servicios
 
             if (jugadorNuevo)
             {
+                // Con la sala llena la partida arranca sola: se reparten las cartas
+                // y se asigna el turno antes de avisar, así quien recarga la vista
+                // ya la encuentra en estado EnCurso.
+                bool partidaIniciada = partida.Jugadores.Count >= MaxJugadores
+                                       && IniciarPartida(partida.Id, usuarioId);
+
                 await _hubContext.Clients.Group(partida.Id.ToString())
                     .SendAsync("ActualizarJugadores", partida.JugadoresActuales, usuario.Nombre);
                 // El contador de jugadores también se refleja en las tarjetas
                 // que están viendo los usuarios del lobby.
                 await NotificarSalaActualizada(partida);
+
+                if (partidaIniciada)
+                {
+                    // Los jugadores que esperaban en la mesa recargan para ver sus cartas.
+                    await _hubContext.Clients.Group(partida.Id.ToString())
+                        .SendAsync("PartidaIniciada");
+                }
             }
 
             return true;

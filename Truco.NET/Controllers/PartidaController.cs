@@ -62,7 +62,17 @@ namespace Truco.Net.Controllers
                 await _partidaService.UnirseAPartidaAsync(id, usuarioId, null);
             }
 
-            return View("Escoba", partida);
+            // La vista recibe un ViewModel: solo trae las cartas del usuario que
+            // mira, las de la mesa y la cantidad de cartas del rival (no cuáles son).
+            var viewModel = _partidaService.ActualizarDatos(id, usuarioId);
+
+            if (viewModel == null)
+            {
+                TempData["ErrorCrear"] = "No pudiste ingresar a la partida (la sala está llena o ya no existe).";
+                return RedirectToAction("Index");
+            }
+
+            return View("Escoba", viewModel);
         }
 
         [HttpGet]
