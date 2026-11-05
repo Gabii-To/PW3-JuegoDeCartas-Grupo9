@@ -401,5 +401,186 @@ namespace Truco.Net.Logica.Servicios
 
             return true;
         }
+
+        public async Task<bool> DejarCartaAsync(int partidaId, int usuarioId, int cartaId)
+        {
+            var partida = BuscarPartidaPorID(partidaId);
+            if (partida == null || partida.Estado != EnumPartida.EnCurso)
+            {
+                return false;
+            }
+
+            // Valida turno del jugador
+            var jugador = partida.Jugadores.FirstOrDefault(j => j.UsuarioId == usuarioId);
+            if (jugador == null || !jugador.EsTurnoActual)
+            {
+                return false;
+            }
+
+            var cartaAMover = jugador.CartasEnMano?.FirstOrDefault(c => c.Id == cartaId);
+            if (cartaAMover == null)
+            {
+                return false; 
+            }
+
+
+            jugador.CartasEnMano?.Remove(cartaAMover);
+
+            partida.CartasEnMesa.Add(cartaAMover);
+
+
+            partida.CambiarTurno();
+
+            //  Notifica mediante SignalR
+            await _hubContext.Clients.Group(partidaId.ToString())
+                .SendAsync("ActualizarEstadoPartida");
+
+            return true;
+        }
+
+        public async Task<bool> ValidarJugadaAsync(int partidaId, int usuarioId, int cartaManoId, List<int> cartasMesaIds)
+        {
+            var partida = BuscarPartidaPorID(partidaId);
+            if (partida == null || partida.Estado != EnumPartida.EnCurso)
+            {
+                return false;
+            }
+
+            // Validar que sea el turno del jugador
+            var jugador = partida.Jugadores.FirstOrDefault(j => j.UsuarioId == usuarioId);
+            if (jugador == null || !jugador.EsTurnoActual)
+            {
+                return false;
+            }
+
+            // Buscar la carta de la mano
+            var cartaMano = jugador.CartasEnMano?.FirstOrDefault(c => c.Id == cartaManoId);
+            if (cartaMano == null)
+            {
+                return false; 
+            }
+
+            // Buscar las cartas seleccionadas en la mesa
+            var cartasMesaSeleccionadas = partida.CartasEnMesa?
+                .Where(c => cartasMesaIds.Contains(c.Id))
+                .ToList() ?? new List<Carta>();
+
+
+
+
+            int sumaTotal = cartaMano.Numero + cartasMesaSeleccionadas.Sum(c => c.Numero);
+            if (sumaTotal != 15)
+            {
+                return false; 
+            }
+
+            // JUGADA VÁLIDA:
+            // se quitan las cartas de la mano y de la mesa para añadirlas en la otra listaCarta del jugador
+
+
+            jugador.CartasEnMano?.Remove(cartaMano);
+            foreach (var cartaMesa in cartasMesaSeleccionadas)
+            {
+                partida.CartasEnMesa?.Remove(cartaMesa);
+            }
+
+            jugador.CartasGanadas.Add(cartaMano);
+            jugador.CartasGanadas.AddRange(cartasMesaSeleccionadas);
+
+            // (Opcional) Verificar si se hizo "Escoba" (si la mesa se quedó completamente limpia)
+            bool esEscoba = partida.CartasEnMesa.Count == 0;
+            if (esEscoba)
+            {
+                jugador.Puntos += 1;
+            }
+
+            partida.CambiarTurno();
+            await _hubContext.Clients.Group(partidaId.ToString())
+                .SendAsync("ActualizarEstadoPartida");
+
+            return true;
+        }
+        public bool FinalizarPartida(int partidaId)
+        {
+            var partida = BuscarPartidaPorID(partidaId);
+            if (partida == null || partida.Estado != EnumPartida.EnCurso)
+            {
+                return false;
+            }
+
+            AsignarPuntosFinales(partida);
+
+            partida.Estado = EnumPartida.Finalizado; 
+
+            return true;
+        }
+
+        private void AsignarPuntosFinales(Partida partida)
+        {
+            if (partida == null || partida.Jugadores == null || !partida.Jugadores.Any())
+            {
+                return;
+            }
+
+            var jugadores = partida.Jugadores.ToList();
+
+            // puntos por cartas
+            var jugadorMasCartas = jugadores.OrderByDescending(j => j.CartasGanadas.Count).FirstOrDefault();
+            if (jugadorMasCartas != null)
+            {
+                int maxCartas = jugadorMasCartas.CartasGanadas.Count;
+                bool empateCartas = jugadores.Count(j => j.CartasGanadas.Count == maxCartas) > 1;
+
+                if (!empateCartas && maxCartas > 0)
+                {
+                    jugadorMasCartas.Puntos += 1;
+                }
+            }
+
+            // puntos por oros
+            var jugadorMasOros = jugadores.OrderByDescending(j =>
+                j.CartasGanadas.Count(c => c.Palo.Equals("Oro", StringComparison.OrdinalIgnoreCase) ||
+                                           c.Palo.Equals("Oros", StringComparison.OrdinalIgnoreCase))
+            ).FirstOrDefault();
+
+            if (jugadorMasOros != null)
+            {
+                int maxOros = jugadorMasOros.CartasGanadas.Count(c => c.Palo.Equals("Oro", StringComparison.OrdinalIgnoreCase) ||
+                                                                    c.Palo.Equals("Oros", StringComparison.OrdinalIgnoreCase));
+                bool empateOros = jugadores.Count(j =>
+                    j.CartasGanadas.Count(c => c.Palo.Equals("Oro", StringComparison.OrdinalIgnoreCase) ||
+                                               c.Palo.Equals("Oros", StringComparison.OrdinalIgnoreCase)) == maxOros) > 1;
+
+                if (!empateOros && maxOros > 0)
+                {
+                    jugadorMasOros.Puntos += 1;
+                }
+            }
+
+            // quien tiene 7 de oro
+            foreach (var jugador in jugadores)
+            {
+                bool tieneSettebello = jugador.CartasGanadas.Any(c => c.EsSieteDeVelos());
+                if (tieneSettebello)
+                {
+                    jugador.Puntos += 1;
+                    break; // Solo existe un 7 de oros en la baraja
+                }
+            }
+
+            // quien tiene mas 7's
+            var jugadorMasSetes = jugadores.OrderByDescending(j => j.CartasGanadas.Count(c => c.Numero == 7)).FirstOrDefault();
+            if (jugadorMasSetes != null)
+            {
+                int maxSetes = jugadorMasSetes.CartasGanadas.Count(c => c.Numero == 7);
+                bool empateSetes = jugadores.Count(j => j.CartasGanadas.Count(c => c.Numero == 7) == maxSetes) > 1;
+
+                if (!empateSetes && maxSetes > 0)
+                {
+                    jugadorMasSetes.Puntos += 1;
+                }
+            }
+        }
+
     }
 }
