@@ -1,6 +1,0 @@
-@Truco.Net.Servicios_HostAddress = http://localhost:5270
-
-GET {{Truco.Net.Servicios_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

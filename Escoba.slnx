@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/Elementos de la solución/">
+    <File Path=".gitignore" />
+  </Folder>
+  <Project Path="Escoba.Entidades/Escoba.Entidades.csproj" Id="d4365b82-082a-407a-b28d-b7fd2313fa9f" />
+  <Project Path="Escoba.Repositorio/Escoba.Repositorio.csproj" Id="df8b64dc-9d28-4d27-9d40-999185a97e47" />
+  <Project Path="Escoba.Servicios/Escoba.Servicios.csproj" Id="7b5421c8-4ece-42a7-86e0-4157549eac6b" />
+  <Project Path="Escoba.Web/Escoba.Web.csproj" />
+</Solution>
