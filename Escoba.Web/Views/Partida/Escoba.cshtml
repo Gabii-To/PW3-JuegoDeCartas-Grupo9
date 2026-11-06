@@ -95,25 +95,44 @@
             </section>
 
             @* Mis cartas *@
-            <section class="mt-4">
-                <h5 class="text-light mb-3">
-                    Tus cartas
-                    <span class="badge bg-secondary">@(Model.Jugadores.FirstOrDefault(j => j.UsuarioId == miUsuarioId)?.CantidadCartasCapturadas ?? 0) capturas · @(Model.Jugadores.FirstOrDefault(j => j.UsuarioId == miUsuarioId)?.Escobas ?? 0) escobas</span>
-                </h5>
-                <div class="cartas-preview" id="mano">
-                    @foreach (var carta in Model.MisCartas)
-                    {
-                        <button type="button" class="carta-seleccionable btn p-0" data-carta-id="@carta.Id" @(Model.EsMiTurno ? "" : "disabled")>
-                            <partial name="_Carta" model="carta" />
-                        </button>
-                    }
+            <div id="panel-jugador" class="panel-mano-flotante">
+                <div class="container-fluid px-5">
+                    <div class="row align-items-center">
+
+                        
+                        <div class="col-md-8 col-12 d-flex flex-column align-items-center align-items-md-start">
+                            <h5 class="text-light mb-1 fs-6">
+                                Tus cartas
+                                <span class="badge bg-secondary">
+                                    @(Model.Jugadores.FirstOrDefault(j => j.UsuarioId == miUsuarioId)?.CantidadCartasCapturadas ?? 0) capturas ·
+                                    @(Model.Jugadores.FirstOrDefault(j => j.UsuarioId == miUsuarioId)?.Escobas ?? 0) escobas
+                                </span>
+                            </h5>
+                            <div class="cartas-preview" id="mano">
+                                @foreach (var carta in Model.MisCartas)
+                                {
+                                    <button type="button" class="carta-seleccionable btn p-0" data-carta-id="@carta.Id" @(Model.EsMiTurno ? "" : "disabled")>
+                                        <partial name="_Carta" model="carta" />
+                                    </button>
+                                }
+                            </div>
+                        </div>
+
+                        
+                        <div class="col-md-4 col-12 d-flex justify-content-center justify-content-md-end align-items-center gap-3 mt-3 mt-md-0">
+                            @if (Model.EsMiTurno)
+                            {
+                                <div class="d-flex flex-column flex-sm-row gap-2 w-100 justify-content-end">
+                                    <button id="capturar" class="btn btn-success btn-sm px-4 py-2 fw-bold text-uppercase shadow" disabled>Capturar (15)</button>
+                                    <button id="descartar" class="btn btn-warning btn-sm px-4 py-2 fw-bold text-uppercase shadow" disabled>Descartar</button>
+                                </div>
+                                <p id="jugadaError" class="text-warning mt-1 mb-0 small w-100 text-end"></p>
+                            }
+                        </div>
+
+                    </div>
                 </div>
-                @if (Model.EsMiTurno)
-                {
-                    <div class="mt-3"><button id="capturar" class="btn btn-success btn-sm" disabled>Capturar (15)</button> <button id="descartar" class="btn btn-warning btn-sm" disabled>Descartar</button></div>
-                    <p id="jugadaError" class="text-warning mt-2 mb-0"></p>
-                }
-            </section>
+            </div>
         }
         @if (Model.Estado == Escoba.Entidades.EnumPartida.Finalizado)
         {
@@ -167,6 +186,8 @@
             .withAutomaticReconnect()
             .build();
 
+
+        //connection.on recibe lo que envia el Servicio (datos actualizados)
         connection.on("ActualizarJugadores", function(cantidadActual, nuevoJugadorNombre) {
             const lista = document.getElementById("listaJugadores");
             const estadoDiv = document.getElementById("estadoPartida");
@@ -231,13 +252,32 @@
         let cartaMano = null;
         const mesaSeleccionada = new Set();
         document.querySelectorAll("#mano .carta-seleccionable").forEach(function(boton) {
-            boton.addEventListener("click", function() { cartaMano = Number(boton.dataset.cartaId); document.querySelectorAll("#mano .carta-seleccionable").forEach(b => b.classList.remove("border","border-warning")); boton.classList.add("border","border-warning"); actualizarBotones(); });
+            boton.addEventListener("click", function() { 
+                cartaMano = Number(boton.dataset.cartaId);
+                document.querySelectorAll("#mano .carta-seleccionable").forEach(b => b.classList.remove("border","border-warning")); 
+                boton.classList.add("border","border-warning"); actualizarBotones(); });
         });
         document.querySelectorAll("#mesa .carta-seleccionable").forEach(function(boton) {
-            boton.addEventListener("click", function() { const id=Number(boton.dataset.cartaId); if(mesaSeleccionada.has(id)){mesaSeleccionada.delete(id);boton.classList.remove("border","border-warning");}else{mesaSeleccionada.add(id);boton.classList.add("border","border-warning");} actualizarBotones(); });
+            boton.addEventListener("click", function() { 
+                const id=Number(boton.dataset.cartaId); 
+                if(mesaSeleccionada.has(id)){mesaSeleccionada.delete(id);
+                    boton.classList.remove("border","border-warning");
+                }else{mesaSeleccionada.add(id);boton.classList.add("border","border-warning");
+            } actualizarBotones(); });
         });
-        function actualizarBotones() { const cap=document.getElementById("capturar"), des=document.getElementById("descartar"); if(cap) cap.disabled=!cartaMano || mesaSeleccionada.size===0; if(des) des.disabled=!cartaMano; }
-        async function jugar(nombre, args) { const error=document.getElementById("jugadaError"); try { const ok=await connection.invoke(nombre, ...args); if(!ok) error.textContent="La jugada no es válida o ya no es tu turno."; } catch { error.textContent="No se pudo enviar la jugada."; } }
+        function actualizarBotones() { 
+            const cap=document.getElementById("capturar"), des=document.getElementById("descartar"); 
+            if(cap) cap.disabled=!cartaMano || mesaSeleccionada.size===0; 
+            if(des) des.disabled=!cartaMano;
+        }
+
+        //aca se llaman a las jugadas con .invoke
+        async function jugar(nombre, args) { 
+            const error=document.getElementById("jugadaError");
+        try { const ok=await connection.invoke(nombre, ...args); 
+            if(!ok) error.textContent="La jugada no es válida o ya no es tu turno."; 
+        } catch { error.textContent="No se pudo enviar la jugada."; } }
+
         document.getElementById("capturar")?.addEventListener("click", () => jugar("Capturar", [Number(partidaId), cartaMano, Array.from(mesaSeleccionada)]));
         document.getElementById("descartar")?.addEventListener("click", () => jugar("Descartar", [Number(partidaId), cartaMano]));
 

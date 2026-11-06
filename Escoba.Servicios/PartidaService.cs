@@ -474,6 +474,8 @@ public class PartidaService
     // MÉTODOS AUXILIARES
     // =====================================================
 
+
+    //evita multiples hilos al momento de validarJugadas
     private static SemaphoreSlim Candado(int id)
     {
         return _candados.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));
