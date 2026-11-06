@@ -117,7 +117,27 @@
         }
         @if (Model.Estado == Escoba.Entidades.EnumPartida.Finalizado)
         {
-            <div class="alert alert-info mt-4">🏁 @Model.MensajeFinal @if (Model.GanadoresUsuarioIds.Contains(miUsuarioId)) { <strong> Tu resultado: ganador.</strong> }</div>
+            @* Se muestra el nombre de quien ganó a los dos jugadores, no solo al ganador. *@
+            var nombresGanadores = Model.Jugadores
+                .Where(j => Model.GanadoresUsuarioIds.Contains(j.UsuarioId))
+                .Select(j => j.Nombre)
+                .ToList();
+
+            string textoGanador = nombresGanadores.Count == 0 ? ""
+                : nombresGanadores.Count == 1 ? "Ganador: " + nombresGanadores[0]
+                : "Empate entre " + string.Join(" y ", nombresGanadores);
+
+            <div class="alert alert-info mt-4">
+                🏁 @Model.MensajeFinal
+                @if (textoGanador != "")
+                {
+                    <strong>@textoGanador</strong>
+                }
+                @if (nombresGanadores.Count == 1 && Model.GanadoresUsuarioIds.Contains(miUsuarioId))
+                {
+                    <span> ¡Ganaste!</span>
+                }
+            </div>
         }
 
         <div class="mt-4">
