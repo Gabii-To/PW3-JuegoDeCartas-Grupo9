@@ -23,8 +23,13 @@
 <div class="container my-5 text-center">
     <div class="container-bar mb-4 p-4 mesa-truco">
         <h2 class="titulo-bar fs-2 text-white m-0">
-            @Model.NombrePartida <span class="subtitulo-neon">(1 VS 1)</span>
+            @Model.NombrePartida 
         </h2>
+        <div class="col-md-3 col-12 text-center text-md-start mb-3 mb-md-0">
+            <button type="button" id="salirMesa" class="btn btn-secondary btn-sm px-3 py-2">
+                🚪 Salir de la Mesa
+            </button>
+        </div>
         <hr class="border-secondary my-3">
 
         <!-- Estado de la partida dinámico al cargar -->
@@ -46,6 +51,8 @@
                 <span>🏁 Estado: <strong>Partida finalizada</strong></span>
             }
         </div>
+       
+
 
         @if (enEspera)
         {
@@ -65,7 +72,7 @@
 
         @if (enCurso || Model.Estado == Escoba.Entidades.EnumPartida.Finalizado)
         {
-            @* Cartas del rival: solo se conoce la cantidad, se dibujan como dorsos. *@
+
             <section class="mt-4">
                 <h5 class="text-light mb-3">
                     @(rival?.Nombre ?? "Rival")
@@ -81,35 +88,16 @@
                 </div>
             </section>
 
-            @* Cartas de la mesa *@
+            
             <section class="mt-4">
-                <h5 class="text-light mb-3">Cartas en la mesa <small>(mazo: @Model.CartasRestantesEnMazo)</small></h5>
-                <div class="cartas-preview" id="mesa">
-                    @foreach (var carta in Model.CartasEnMesa)
-                    {
-                        <button type="button" class="carta-seleccionable btn p-0" data-carta-id="@carta.Id" @(Model.EsMiTurno ? "" : "disabled")>
-                            <partial name="_Carta" model="carta" />
-                        </button>
-                    }
-                </div>
-            </section>
+                <div class="container-fluid">
+                    <div class="row align-items-center justify-content-center">
 
-            @* Mis cartas *@
-            <div id="panel-jugador" class="panel-mano-flotante">
-                <div class="container-fluid px-5">
-                    <div class="row align-items-center">
 
-                        
-                        <div class="col-md-8 col-12 d-flex flex-column align-items-center align-items-md-start">
-                            <h5 class="text-light mb-1 fs-6">
-                                Tus cartas
-                                <span class="badge bg-secondary">
-                                    @(Model.Jugadores.FirstOrDefault(j => j.UsuarioId == miUsuarioId)?.CantidadCartasCapturadas ?? 0) capturas ·
-                                    @(Model.Jugadores.FirstOrDefault(j => j.UsuarioId == miUsuarioId)?.Escobas ?? 0) escobas
-                                </span>
-                            </h5>
-                            <div class="cartas-preview" id="mano">
-                                @foreach (var carta in Model.MisCartas)
+                        <div class="col-md-8 col-12 text-center mb-3 mb-md-0">
+                            <h5 class="text-light mb-3">Cartas en la mesa <small>(mazo: @Model.CartasRestantesEnMazo)</small></h5>
+                            <div class="cartas-preview justify-content-center" id="mesa">
+                                @foreach (var carta in Model.CartasEnMesa)
                                 {
                                     <button type="button" class="carta-seleccionable btn p-0" data-carta-id="@carta.Id" @(Model.EsMiTurno ? "" : "disabled")>
                                         <partial name="_Carta" model="carta" />
@@ -118,18 +106,43 @@
                             </div>
                         </div>
 
-                        
-                        <div class="col-md-4 col-12 d-flex justify-content-center justify-content-md-end align-items-center gap-3 mt-3 mt-md-0">
-                            @if (Model.EsMiTurno)
-                            {
-                                <div class="d-flex flex-column flex-sm-row gap-2 w-100 justify-content-end">
-                                    <button id="capturar" class="btn btn-success btn-sm px-4 py-2 fw-bold text-uppercase shadow" disabled>Capturar (15)</button>
-                                    <button id="descartar" class="btn btn-warning btn-sm px-4 py-2 fw-bold text-uppercase shadow" disabled>Descartar</button>
-                                </div>
-                                <p id="jugadaError" class="text-warning mt-1 mb-0 small w-100 text-end"></p>
-                            }
+
+                        <div class="col-md-4 col-12 text-center text-md-end">
+                            <div class="d-flex flex-column align-items-center align-items-md-end gap-2">
+                                <h5 class="text-light mb-1 fs-6">
+                                    Tus capturas
+                                    <span class="badge bg-secondary">
+                                        @(Model.Jugadores.FirstOrDefault(j => j.UsuarioId == miUsuarioId)?.CantidadCartasCapturadas ?? 0) cap ·
+                                        @(Model.Jugadores.FirstOrDefault(j => j.UsuarioId == miUsuarioId)?.Escobas ?? 0) esc
+                                    </span>
+                                </h5>
+
+                                @if (Model.EsMiTurno)
+                                {
+                                    <div class="d-flex gap-2 mt-2">
+                                        <button id="capturar" class="btn btn-success btn-sm px-3 py-2 fw-bold text-uppercase shadow" disabled>Capturar (15)</button>
+                                        <button id="descartar" class="btn btn-warning btn-sm px-3 py-2 fw-bold text-uppercase shadow" disabled>Descartar</button>
+                                    </div>
+                                    <p id="jugadaError" class="text-warning mt-1 mb-0 small"></p>
+                                }
+                            </div>
                         </div>
 
+                    </div>
+                </div>
+            </section>
+        
+
+            @* Mis cartas *@
+            <div id="panel-jugador" class="panel-mano-flotante">
+                <div class="container text-center">
+                    <div class="cartas-preview" id="mano">
+                        @foreach (var carta in Model.MisCartas)
+                        {
+                            <button type="button" class="carta-seleccionable btn p-0" data-carta-id="@carta.Id" @(Model.EsMiTurno ? "" : "disabled")>
+                                <partial name="_Carta" model="carta" />
+                            </button>
+                        }
                     </div>
                 </div>
             </div>
@@ -159,13 +172,7 @@
             </div>
         }
 
-        <div class="mt-4">
-            @* El abandono se procesa por SignalR antes de redirigir para que
-               el resto de jugadores reciba la actualización inmediatamente. *@
-            <button type="button" id="salirMesa" class="btn btn-secondary btn-sm">
-                Salir de la Mesa
-            </button>
-        </div>
+
     </div>
 </div>
 
@@ -173,6 +180,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
 
     <script>
+        const sonidoClic = new Audio('/Assets/seleccion.mp3');
+        const sonidoJugar = new Audio('/Assets/jugada.mp3');
+        const sonidoError = new Audio('/Assets/error.mp3');
         const partidaId = "@Model.PartidaId";
         const usuarioId = @miUsuarioId;
         const maxJugadores = @maxJugadores; // Pasamos el límite desde C# a JS
@@ -205,10 +215,10 @@
             // Validamos si la sala se llenó con este nuevo ingreso
             if (cantidadActual >= maxJugadores) {
                 estadoDiv.className = "alert alert-success bg-dark text-success border-success py-2 mb-4 d-inline-block px-4";
-                estadoDiv.innerHTML = `🚀 Estado: <strong>¡Sala llena! Comenzando partida...</strong>`;
+                estadoDiv.innerHTML = ` Estado: <strong>¡Sala llena! Comenzando partida...</strong>`;
 
             } else {
-                estadoDiv.innerHTML = `⏳ Estado: <strong>Esperando jugadores (${cantidadActual}/${maxJugadores})</strong>`;
+                estadoDiv.innerHTML = ` Estado: <strong>Esperando jugadores (${cantidadActual}/${maxJugadores})</strong>`;
             }
         });
 
@@ -229,7 +239,20 @@
             // Recargamos la página si alguien se va para actualizar estados y contadores
             location.reload();
         });
-        connection.on("ActualizarEstadoPartida", function() { if (!saliendo) location.reload(); });
+        connection.on("ActualizarEstadoPartida", function () {
+            if (saliendo) return;
+
+            
+            try {
+                sonidoJugar.currentTime = 0;
+                sonidoJugar.play().catch(() => { });
+            } catch (e) { }
+
+            
+            setTimeout(() => {
+                location.reload();
+            }, 700);
+        });
 
         // Al reconectar, SignalR crea una nueva conexión y los grupos no se
         // conservan: hay que volver a unirse a la mesa.
@@ -255,15 +278,23 @@
             boton.addEventListener("click", function() { 
                 cartaMano = Number(boton.dataset.cartaId);
                 document.querySelectorAll("#mano .carta-seleccionable").forEach(b => b.classList.remove("border","border-warning")); 
-                boton.classList.add("border","border-warning"); actualizarBotones(); });
+                boton.classList.add("border","border-warning"); 
+                sonidoClic.currentTime = 0; 
+                sonidoClic.play().catch(() => { }); 
+                actualizarBotones(); 
+            });
         });
         document.querySelectorAll("#mesa .carta-seleccionable").forEach(function(boton) {
             boton.addEventListener("click", function() { 
                 const id=Number(boton.dataset.cartaId); 
                 if(mesaSeleccionada.has(id)){mesaSeleccionada.delete(id);
                     boton.classList.remove("border","border-warning");
-                }else{mesaSeleccionada.add(id);boton.classList.add("border","border-warning");
-            } actualizarBotones(); });
+                }else
+                {mesaSeleccionada.add(id);boton.classList.add("border","border-warning");
+                } 
+                sonidoClic.currentTime = 0; 
+                sonidoClic.play().catch(() => { }); 
+                actualizarBotones(); });
         });
         function actualizarBotones() { 
             const cap=document.getElementById("capturar"), des=document.getElementById("descartar"); 
@@ -272,11 +303,36 @@
         }
 
         //aca se llaman a las jugadas con .invoke
-        async function jugar(nombre, args) { 
-            const error=document.getElementById("jugadaError");
-        try { const ok=await connection.invoke(nombre, ...args); 
-            if(!ok) error.textContent="La jugada no es válida o ya no es tu turno."; 
-        } catch { error.textContent="No se pudo enviar la jugada."; } }
+        async function jugar(nombre, args) {
+            const error = document.getElementById("jugadaError");
+            try {
+                const ok = await connection.invoke(nombre, ...args);
+                if (ok) {
+                    // Marcamos como saliendo momentáneamente para evitar conflictos externos
+                    saliendo = true;
+
+                    // Reproducimos el sonido de éxito inmediatamente
+                    sonidoJugar.currentTime = 0;
+                    sonidoJugar.play().catch((err) => {
+                        console.log("Error al reproducir audio:", err);
+                    });
+
+                    // Damos un respiro de 500 milisegundos para que el archivo .mp3 (que ya vimos que carga perfecto en Network) se escuche en los parlantes, y luego recargamos la página para mostrar el nuevo estado de la mesa.
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+
+                } else {
+                    sonidoError.currentTime = 0;
+                    sonidoError.play().catch(() => { });
+                    if (error) error.textContent = "La jugada no es válida o ya no es tu turno.";
+                }
+            } catch (err) {
+                sonidoError.currentTime = 0;
+                sonidoError.play().catch(() => { });
+                if (error) error.textContent = "No se pudo enviar la jugada.";
+            }
+        }
 
         document.getElementById("capturar")?.addEventListener("click", () => jugar("Capturar", [Number(partidaId), cartaMano, Array.from(mesaSeleccionada)]));
         document.getElementById("descartar")?.addEventListener("click", () => jugar("Descartar", [Number(partidaId), cartaMano]));
