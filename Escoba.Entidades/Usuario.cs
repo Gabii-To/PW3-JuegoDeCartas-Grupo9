@@ -14,7 +14,7 @@ namespace Escoba.Entidades
         public string Nombre { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "La contraseña es obligatoria.")]
-        [StringLength(100, MinimumLength = 3, ErrorMessage = "La contraseña debe tener al menos 6 caracteres.")]
+        [StringLength(100, MinimumLength = 3, ErrorMessage = "La contraseña debe tener al menos 3 caracteres.")]
         [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
 
