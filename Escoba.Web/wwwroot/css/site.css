@@ -136,6 +136,13 @@ main {
     position: relative;
 }
 
+/* Espacio inferior para que la mano flotante no tape la mesa */
+.mesa-truco.mesa-con-mano {
+    margin-bottom: 180px !important;
+    padding: 15px;
+    min-height: 320px;
+}
+
 /* Anotador */
 .anotador-truco {
     background: #141414;
@@ -370,7 +377,7 @@ footer {
     background: linear-gradient(to top, rgba(10, 10, 10, 0.98), rgba(15, 56, 30, 0.94));
     border-top: 3px solid var(--madera-borde);
     box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.9);
-    padding: 12px 0;
+    padding: 4px 0;
     z-index: 1000;
 }
 
