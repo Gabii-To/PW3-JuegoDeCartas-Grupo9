@@ -1,5 +1,6 @@
 using Escoba.Entidades;
 using Escoba.Repositorio;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Escoba.Servicios
@@ -14,10 +15,12 @@ namespace Escoba.Servicios
     public class HomeService : IHomeService
     {
         private readonly EscobaDbContext _context;
+        private readonly PasswordHasher<Usuario> _passwordHasher;
 
         public HomeService(EscobaDbContext context)
         {
             _context = context;
+            _passwordHasher = new PasswordHasher<Usuario>();
         }
 
         public async Task<Usuario?> ValidarUsuarioAsync(string usuario, string password)
@@ -26,8 +29,18 @@ namespace Escoba.Servicios
                 return null;
 
             // Busca el usuario en la base de datos real
-            return await _context.Usuarios
-                .FirstOrDefaultAsync(u => u.Nombre.ToLower() == usuario.ToLower() && u.Password == password);
+            var usuarioEncontrado = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Nombre.ToLower() == usuario.ToLower());
+            if (usuarioEncontrado == null)
+                return null;
+
+            var resultado = _passwordHasher.VerifyHashedPassword
+                (usuarioEncontrado,usuarioEncontrado.Password,password);
+
+            if (resultado == PasswordVerificationResult.Failed)
+                return null;
+
+            return usuarioEncontrado;
         }
 
         public async Task<(bool Exito, string Mensaje)> RegistrarUsuarioAsync(string usuario, string password)
@@ -45,9 +58,13 @@ namespace Escoba.Servicios
 
             var nuevoUsuario = new Usuario
             {
-                Nombre = usuario,
-                Password = password
+                Nombre = usuario
             };
+
+            nuevoUsuario.Password = _passwordHasher.HashPassword(
+                nuevoUsuario,
+                password
+            );
 
             _context.Usuarios.Add(nuevoUsuario);
             await _context.SaveChangesAsync();

@@ -107,11 +107,11 @@
                         </div>
 
 
-                        <div class="col-md-4 col-12 text-center text-md-end">
-                            <div class="d-flex flex-column align-items-center align-items-md-end gap-2">
-                                <h5 class="text-light mb-1 fs-6">
-                                    Tus capturas
-                                    <span class="badge bg-secondary">
+                        <div class="col-md-4 col-12 text-center">
+                            <div class="d-flex flex-column align-items-center justify-content-center w-100 gap-2">
+                                <h5 class="text-light mb-1 fs-6 d-flex flex-column align-items-center">
+                                    <span>Tus capturas</span>
+                                    <span class="badge bg-secondary mt-1">
                                         @(Model.Jugadores.FirstOrDefault(j => j.UsuarioId == miUsuarioId)?.CantidadCartasCapturadas ?? 0) cap ·
                                         @(Model.Jugadores.FirstOrDefault(j => j.UsuarioId == miUsuarioId)?.Escobas ?? 0) esc
                                     </span>
@@ -119,12 +119,16 @@
 
                                 @if (Model.EsMiTurno)
                                 {
-                                    <div class="d-flex gap-2 mt-2">
-                                        <button id="capturar" class="btn btn-success btn-sm px-3 py-2 fw-bold text-uppercase shadow" disabled>Capturar (15)</button>
-                                        <button id="descartar" class="btn btn-warning btn-sm px-3 py-2 fw-bold text-uppercase shadow" disabled>Descartar</button>
+                                    <div class="d-flex flex-column align-items-center justif-content-center gap-2 mt-2 w-100">
+                                        <button id="capturar" class="btn btn-success btn-sm px-3 py-2 fw-bold text-uppercase shadow"
+                                        disabled>Capturar (15)</button>
+
+                                        <button id="descartar" class="btn btn-warning btn-sm px-3 py-2 fw-bold text-uppercase shadow"
+                                        disabled>Descartar</button>
                                     </div>
-                                    <p id="jugadaError" class="text-warning mt-1 mb-0 small"></p>
-                                }
+
+                                    <p id="jugadaError" class="text-warning mt-1 mb-0 small text-center"></p>
+                            }
                             </div>
                         </div>
 

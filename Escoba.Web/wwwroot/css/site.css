@@ -336,6 +336,8 @@ footer {
     }
 
 #mano .carta-imagen {
+    width: 100px;
+    height: 142px;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -390,4 +392,284 @@ footer {
     border: none;
     padding: 4px;
     margin: 0;
+}
+
+
+/* ==========================================
+   RESPONSIVE - MESA DE ESCOBA
+   ========================================== */
+
+/* La mesa se adapta al ancho disponible */
+.mesa-truco {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: clamp(12px, 2.5vw, 30px);
+    overflow: visible;
+}
+
+.mesa-con-mano {
+    margin-bottom: 0 !important;
+    min-height: 0;
+}
+
+/* Evitar desbordamientos de columnas y secciones */
+.mesa-truco .container,
+.mesa-truco .container-fluid,
+.mesa-truco .row,
+.mesa-truco section {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.mesa-truco .row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* Contenedores de cartas */
+.cartas-preview {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(5px, 1vw, 12px);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: clamp(6px, 1.5vw, 12px);
+}
+
+/* Cartas de la mesa y del jugador */
+.carta-preview {
+    width: auto;
+    flex: 0 1 auto;
+    margin: 0;
+    text-align: center;
+}
+
+.carta-imagen {
+    display: block;
+    width: clamp(48px, 7vw, 76px);
+    height: auto;
+    aspect-ratio: 76 / 108;
+    object-fit: contain;
+    margin: 0 auto 4px;
+}
+
+.carta-preview figcaption {
+    font-size: clamp(0.58rem, 1.2vw, 0.8rem);
+    line-height: 1.2;
+}
+
+/* Cartas ocultas del rival */
+.carta-preview .carta-dorso {
+    width: clamp(48px, 7vw, 76px);
+    height: auto;
+    aspect-ratio: 76 / 108;
+    margin: 0 auto 4px;
+}
+
+/* Botones de cartas */
+.carta-seleccionable {
+    flex: 0 0 auto;
+    max-width: 100%;
+}
+
+/* Panel de la mano: deja de flotar sobre toda la pantalla.
+   Ahora ocupa su lugar normal debajo de la mesa. */
+.panel-mano-flotante {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    width: 100%;
+    max-width: 100%;
+    margin-top: 20px;
+    padding: 12px 8px;
+    box-sizing: border-box;
+    border: 2px solid var(--madera-borde);
+    border-radius: 12px;
+    background: linear-gradient( to bottom, rgba(15, 56, 30, 0.96), rgba(10, 10, 10, 0.98) );
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+    z-index: 1;
+}
+
+/* Anular el posicionamiento fixed anterior de #mano */
+#mano.cartas-preview {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    transform: none;
+    width: 100%;
+    max-width: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(4px, 1vw, 10px);
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    box-sizing: border-box;
+}
+
+/* Animaciones sin provocar desbordamientos */
+#mano .carta-seleccionable:hover {
+    transform: translateY(-8px) scale(1.03);
+}
+
+#mano .carta-seleccionable.border-warning,
+#mano .carta-seleccionable.carta-seleccionada {
+    transform: translateY(-8px) scale(1.04) !important;
+}
+
+/* Botones de acción */
+#capturar,
+#descartar {
+    white-space: normal;
+    min-width: 0;
+}
+
+.mesa-truco .d-flex.gap-2 {
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* ==========================================
+   TABLETS
+   ========================================== */
+@media (max-width: 991.98px) {
+    .mesa-truco {
+        border-width: 8px;
+        border-radius: 15px;
+    }
+
+        .mesa-truco .titulo-bar {
+            font-size: clamp(1.4rem, 4vw, 2rem);
+        }
+
+        .mesa-truco section {
+            margin-top: 1rem !important;
+        }
+
+    .panel-mano-flotante {
+        margin-top: 15px;
+    }
+}
+
+/* ==========================================
+   CELULARES
+   ========================================== */
+@media (max-width: 575.98px) {
+    .mesa-truco {
+        padding: 10px 7px;
+        border-width: 5px;
+        border-radius: 12px;
+        margin-top: 8px;
+    }
+
+        .mesa-truco .titulo-bar {
+            font-size: 1.35rem;
+            overflow-wrap: anywhere;
+        }
+
+    #salirMesa {
+        width: 100%;
+        max-width: 250px;
+    }
+
+    #estadoPartida {
+        display: block !important;
+        width: 100%;
+        padding: 10px !important;
+        font-size: 0.85rem;
+        box-sizing: border-box;
+    }
+
+    .mesa-truco h5 {
+        font-size: 0.95rem;
+    }
+
+    .cartas-preview {
+        gap: 4px;
+        padding: 5px;
+    }
+
+    .carta-imagen {
+        width: clamp(43px, 13vw, 62px);
+    }
+
+    .carta-preview .carta-dorso {
+        width: clamp(43px, 13vw, 62px);
+    }
+
+    .carta-preview figcaption {
+        font-size: 0.58rem;
+    }
+
+    .panel-mano-flotante {
+        padding: 8px 4px;
+        margin-top: 12px;
+    }
+
+    #mano.cartas-preview {
+        gap: 3px;
+        padding: 4px 0;
+    }
+
+    #mano .carta-seleccionable {
+        padding: 0 !important;
+    }
+
+        #mano .carta-seleccionable:hover {
+            transform: translateY(-4px) scale(1.02);
+        }
+
+        #mano .carta-seleccionable.border-warning {
+            transform: translateY(-5px) scale(1.03) !important;
+        }
+
+    .mesa-truco .d-flex.gap-2 {
+        width: 100%;
+    }
+
+    #capturar,
+    #descartar {
+        flex: 1 1 120px;
+        font-size: 0.75rem;
+        padding: 9px 6px !important;
+    }
+
+    .mesa-truco .badge {
+        white-space: normal;
+    }
+}
+
+/* ==========================================
+   CELULARES EN HORIZONTAL
+   ========================================== */
+@media (max-height: 500px) and (orientation: landscape) {
+    .mesa-truco {
+        padding: 8px;
+    }
+
+        .mesa-truco section {
+            margin-top: 8px !important;
+        }
+
+    .carta-imagen {
+        width: 48px;
+    }
+
+    .carta-preview .carta-dorso {
+        width: 48px;
+    }
+
+    .panel-mano-flotante {
+        margin-top: 8px;
+        padding: 5px;
+    }
 }

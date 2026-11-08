@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Escoba.Entidades;
+using Microsoft.AspNetCore.Identity;
 
 namespace Escoba.Repositorio
 {
@@ -19,11 +20,19 @@ namespace Escoba.Repositorio
             }
 
             // Definimos los 3 usuarios iniciales
+            var passwordHasher = new PasswordHasher<Usuario>();
+
+            var user1 = new Usuario { Nombre = "admin" };
+            user1.Password = passwordHasher.HashPassword(user1, "1234");
+            var user2 = new Usuario { Nombre = "jugador" };
+            user2.Password = passwordHasher.HashPassword(user2, "1234");
+            var user3 = new Usuario { Nombre = "juan" };
+            user3.Password = passwordHasher.HashPassword(user3, "1234");
             var usuarios = new Usuario[]
             {
-                new Usuario { Nombre = "admin", Password = "12345" },
-                new Usuario { Nombre = "jugador1", Password = "truco2026" },
-                new Usuario { Nombre = "juan", Password = "secret" }
+                user1,
+                user2,
+                user3
             };
 
             context.Usuarios.AddRange(usuarios);
