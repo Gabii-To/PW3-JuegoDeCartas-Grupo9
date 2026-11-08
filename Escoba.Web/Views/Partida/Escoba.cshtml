@@ -20,8 +20,8 @@
                        : "alert-secondary text-light border-secondary";
 }
 
-<div class="container my-5 text-center">
-    <div class="container-bar mb-4 p-4 mesa-truco">
+<div class="container mt-2 mb-0 text-center">
+    <div class="container-bar mb-4 mesa-truco @(enCurso || Model.Estado == Escoba.Entidades.EnumPartida.Finalizado ? "mesa-con-mano" : "")">
         <h2 class="titulo-bar fs-2 text-white m-0">
             @Model.NombrePartida 
         </h2>
@@ -33,7 +33,7 @@
         <hr class="border-secondary my-3">
 
         <!-- Estado de la partida dinámico al cargar -->
-        <div id="estadoPartida" class="alert @claseEstado bg-dark py-2 mb-4 d-inline-block px-4">
+        <div id="estadoPartida" class="alert @claseEstado bg-dark py-2 mb-2 d-inline-block px-4">
             @if (enEspera)
             {
                 <span>⏳ Estado: <strong>Esperando jugadores (@jugadoresActuales/@maxJugadores)...</strong></span>
