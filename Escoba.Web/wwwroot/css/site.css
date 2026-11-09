@@ -292,24 +292,15 @@ footer {
 
 /* Animacion de Tus cartas */
 #mano.cartas-preview {
-    position: fixed;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
-    max-width: 650px;
-    background: linear-gradient(to top, rgba(10, 10, 10, 0.95), rgba(15, 56, 30, 0.85));
-    border: 2px solid var(--madera-borde);
-    border-bottom: none;
-    border-top-left-radius: 18px;
-    border-top-right-radius: 18px;
-    padding: 12px 20px 16px 20px;
-    box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.8), inset 0 2px 5px rgba(255, 255, 255, 0.05);
-    z-index: 1000;
     display: flex;
     justify-content: center;
-    gap: 8px;
-    transition: transform 0.3s ease;
+    gap: 10px;
+    background-color: var(--pano-verde);
+    background-image: none;
+    border: 6px solid var(--madera-borde);
+    border-radius: 12px;
+    padding: 8px 12px;
+    margin: 0;
 }
 
 /* Efecto abanico */
@@ -336,8 +327,8 @@ footer {
     }
 
 #mano .carta-imagen {
-    width: 100px;
-    height: 142px;
+    width: 95px;
+    height: 135px;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -408,9 +399,14 @@ footer {
     overflow: visible;
 }
 
+.mesa-truco .carta-imagen {
+    width: 95px;
+    height: 135px;
+}
+
 .mesa-con-mano {
-    margin-bottom: 0 !important;
-    min-height: 0;
+    margin-bottom: 180px !important;
+    min-height: 320px;
 }
 
 /* Evitar desbordamientos de columnas y secciones */
@@ -479,19 +475,20 @@ footer {
 /* Panel de la mano: deja de flotar sobre toda la pantalla.
    Ahora ocupa su lugar normal debajo de la mesa. */
 .panel-mano-flotante {
-    position: relative;
-    left: auto;
-    bottom: auto;
-    width: 100%;
-    max-width: 100%;
-    margin-top: 20px;
-    padding: 12px 8px;
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: fit-content;
+    max-width: calc(100% - 24px);
+    padding: 8px 15px;
     box-sizing: border-box;
-    border: 2px solid var(--madera-borde);
-    border-radius: 12px;
-    background: linear-gradient( to bottom, rgba(15, 56, 30, 0.96), rgba(10, 10, 10, 0.98) );
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
-    z-index: 1;
+    background: var(--pano-verde);
+    border: 6px solid var(--madera-borde);
+    border-bottom: none;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.9);
+    z-index: 1000;
 }
 
 /* Anular el posicionamiento fixed anterior de #mano */
@@ -589,6 +586,11 @@ footer {
         box-sizing: border-box;
     }
 
+    .mesa-truco .carta-imagen {
+        width: 68px;
+        height: 96px;
+    }
+
     .mesa-truco h5 {
         font-size: 0.95rem;
     }
@@ -613,6 +615,8 @@ footer {
     .panel-mano-flotante {
         padding: 8px 4px;
         margin-top: 12px;
+        width: calc(100% - 16px);
+        padding: 5px 2px;
     }
 
     #mano.cartas-preview {
@@ -646,6 +650,11 @@ footer {
     .mesa-truco .badge {
         white-space: normal;
     }
+
+    #mano .carta-imagen {
+        width: 68px;
+        height: 96px;
+    }
 }
 
 /* ==========================================
@@ -672,4 +681,23 @@ footer {
         margin-top: 8px;
         padding: 5px;
     }
+}
+
+.marcador-estadisticas {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.estadistica-capturas {
+    color: #e6bd72;
+}
+
+.estadistica-escobas {
+    color: #75d995;
+}
+
+.marcador-estadisticas i {
+    margin-right: 3px;
 }

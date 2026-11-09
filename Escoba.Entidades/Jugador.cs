@@ -33,6 +33,8 @@ namespace Escoba.Entidades
         public List<Carta> CartasEnMano { get; set; } = new List<Carta>();
         [NotMapped]
         public List<Carta> CartasGanadas { get; set; } = new List<Carta>();
+        [NotMapped]
+        public int Capturas { get; set; }
 
         [NotMapped]
         public int Escobas { get; set; }

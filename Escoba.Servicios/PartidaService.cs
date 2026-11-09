@@ -1,3 +1,4 @@
+
 using System.Collections.Concurrent;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,6 +48,10 @@ public class PartidaService
 
         var jugadorActual = partida.Jugadores.FirstOrDefault(j => j.EsTurnoActual);
 
+        // Actualizar el puntaje de todos los jugadores.
+        foreach (var j in partida.Jugadores)
+            ActualizarPuntaje(j);
+
         return new PartidaViewModel
         {
             PartidaId = partida.Id,
@@ -65,9 +70,10 @@ public class PartidaService
             {
                 UsuarioId = j.UsuarioId,
                 Nombre = j.UsuarioAsociado?.Nombre ?? "Jugador",
-                Puntos = j.CartasGanadas.Count,
+                Puntos = j.Puntos,
                 CantidadCartasCapturadas = j.CartasGanadas.Count,
                 Escobas = j.Escobas,
+                Capturas = j.Capturas,
                 CantidadCartasMano = j.CartasEnMano.Count,
                 EsTurnoActual = j.EsTurnoActual
             }).ToList()
@@ -299,9 +305,15 @@ public class PartidaService
         {
             jugador.CartasEnMano.Clear();
             jugador.CartasGanadas.Clear();
+            jugador.Capturas = 0;
             jugador.Escobas = 0;
+            jugador.Puntos = 0;
             jugador.EsTurnoActual = false;
         }
+
+        partida.UltimoCapturadorUsuarioId = null;
+        partida.GanadoresUsuarioIds.Clear();
+        partida.MensajeFinal = "";
 
         Repartir(partida);
         partida.CartasEnMesa = partida.MazoCartas.RepartirCartas(4);
@@ -367,10 +379,16 @@ public class PartidaService
                 jugador.CartasGanadas.Add(carta);
                 jugador.CartasGanadas.AddRange(mesa);
 
+                // Una captura válida suma 1 punto.
+                jugador.Capturas++;
+
                 partida.UltimoCapturadorUsuarioId = usuarioId;
 
+                // Una escoba suma 2 puntos adicionales.
                 if (partida.CartasEnMesa.Count == 0)
                     jugador.Escobas++;
+
+                ActualizarPuntaje(jugador);
             }
             else
             {
@@ -439,6 +457,8 @@ public class PartidaService
             ? partida.Jugadores.FirstOrDefault(j => j.UsuarioId == usuarioId)
             : null;
 
+        // Las cartas restantes se entregan al último capturador.
+        // Esta recogida final no cuenta como una captura ni como escoba.
         if (ultimoCapturador is not null)
         {
             ultimoCapturador.CartasGanadas.AddRange(partida.CartasEnMesa);
@@ -447,15 +467,19 @@ public class PartidaService
 
         if (partida.CartasEnMesa.Count > 0)
         {
-            partida.MensajeFinal = "La partida terminó sin capturas; las cartas de la mesa quedan sin asignar hasta definir esa regla.";
+            partida.MensajeFinal = "La partida terminó sin capturas; las cartas de la mesa quedan sin asignar.";
             partida.GanadoresUsuarioIds.Clear();
         }
         else
         {
-            var maximo = partida.Jugadores.Max(j => j.CartasGanadas.Count);
+            // Calcular el puntaje definitivo de cada jugador.
+            foreach (var jugador in partida.Jugadores)
+                ActualizarPuntaje(jugador);
+
+            var maximo = partida.Jugadores.Max(j => j.Puntos);
 
             partida.GanadoresUsuarioIds = partida.Jugadores
-                .Where(j => j.CartasGanadas.Count == maximo)
+                .Where(j => j.Puntos == maximo)
                 .Select(j => j.UsuarioId)
                 .ToList();
 
@@ -471,11 +495,19 @@ public class PartidaService
     }
 
     // =====================================================
+    // PUNTUACIÓN
+    // =====================================================
+
+    private static void ActualizarPuntaje(Jugador jugador)
+    {
+        jugador.Puntos = jugador.Capturas + (jugador.Escobas * 2);
+    }
+
+    // =====================================================
     // MÉTODOS AUXILIARES
     // =====================================================
 
-
-    //evita multiples hilos al momento de validarJugadas
+    // Evita múltiples hilos al momento de validar jugadas.
     private static SemaphoreSlim Candado(int id)
     {
         return _candados.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));

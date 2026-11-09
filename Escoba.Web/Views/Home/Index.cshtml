@@ -11,21 +11,20 @@
     <!-- Bienvenida -->
     @if (!estaLogueado)
     {
-     <div class="container-bar text-center py-5 mb-5">
-        <h1 class="titulo-bar display-3 fw-bold mb-3">
-            EL MEJOR LUGAR PARA JUGAR A LA <span class="subtitulo-neon">ESCOBA DE 15</span>
-        </h1>
-        <p class="lead text-light opacity-75 col-md-8 mx-auto">
-            Pasá, sentate en la mesa y pedí un trago. Sumá 15, llevate el 7 de velo, juntá los oros y no dejes pasar ni una escoba limpia sobre la mesa.
-        </p>
-        <div class="mt-4">
-            <button class="btn btn-bar btn-lg px-4 me-2" data-bs-toggle="modal" data-bs-target="#loginModal">
-                Jugar Ahora
-            </button>
+        <div class="container-bar text-center py-5 mb-5">
+            <h1 class="titulo-bar display-3 fw-bold mb-3">
+                EL MEJOR LUGAR PARA JUGAR A LA <span class="subtitulo-neon">ESCOBA DE 15</span>
+            </h1>
+            <p class="lead text-light opacity-75 col-md-8 mx-auto">
+                Pasá, sentate en la mesa y pedí un trago. Combiná tus cartas para sumar 15, llevate los oros, buscá el Siete de Oro y conseguí todas las escobas que puedas.
+            </p>
+            <div class="mt-4">
+                <button class="btn btn-bar btn-lg px-4 me-2" data-bs-toggle="modal" data-bs-target="#loginModal">
+                    Jugar Ahora
+                </button>
+            </div>
         </div>
-    </div>
     }
-
 
     <!-- Mesa disponible -->
     <section id="modalidades" class="my-5">
@@ -36,11 +35,11 @@
                 <div class="mesa-truco h-100 d-flex flex-column justify-content-between p-4">
                     <div>
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h3 class="fw-bold text-white mb-0">MANO A MANO </h3>
+                            <h3 class="fw-bold text-white mb-0">MANO A MANO</h3>
                             <span class="badge bg-warning text-dark fs-6">2 Jugadores</span>
                         </div>
                         <p class="text-light opacity-75">
-                            Duelo directo en la mesa. Controlá las cartas en juego, calculá las sumas a 15 y disputale cada oro y cada 7 cara a cara a tu rival.
+                            Duelo directo en la mesa. Calculá las combinaciones para llegar a 15, acumulá cartas y oros, y disputale cada escoba a tu rival.
                         </p>
                         <ul class="list-unstyled small text-warning">
                             <li>✔ Duelo ágil y estratégico</li>
@@ -72,7 +71,6 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </section>
 
@@ -80,7 +78,7 @@
         <div class="container">
             <h2 class="text-center subtitulo-neon mb-4 fs-1">¿CÓMO SE JUEGA A LA ESCOBA?</h2>
             <p class="text-center text-light opacity-75 col-md-8 mx-auto mb-5">
-                El objetivo es simple: sumar 15 puntos combinando una carta de tu mano con una o más cartas que estén sobre la mesa. ¡Pero cuidado con dejar la mesa limpia para el que viene!
+                El objetivo es sumar exactamente 15 combinando una carta de tu mano con una o más cartas de la mesa. Capturá cartas, conseguí escobas y acumulá puntos para ganar la partida.
             </p>
 
             <div class="row g-4">
@@ -93,16 +91,16 @@
                                 <h4 class="fw-bold text-white mb-0">Sumá 15</h4>
                             </div>
                             <p class="text-light opacity-75 small">
-                                Cada carta tiene su valor numérico (del 1 al 7, sota es 8, caballo es 9 y rey es 10). Jugá una carta de tu mano y sumá exactamente 15 con las de la mesa para capturarlas.
+                                Cada carta tiene un valor: del As al 7 conserva su número, la Sota vale 8, el Caballo 9 y el Rey 10. Jugá una carta de tu mano y combinála con las de la mesa para sumar exactamente 15 y capturarlas.
                             </p>
                         </div>
                         <ul class="list-unstyled small text-warning mb-0">
-                            <li>✔ El Rey (10) con un 5 es un punto facil</li>
+                            <li>✔ Si no podés capturar, dejá una carta en la mesa.</li>
+                            <li>✔ Se reparten 3 cartas por jugador en cada mano.</li>
                         </ul>
                     </div>
                 </div>
 
- 
                 <div class="col-md-4">
                     <div class="mesa-truco h-100 p-4 d-flex flex-column justify-content-between">
                         <div>
@@ -111,15 +109,14 @@
                                 <h4 class="fw-bold text-white mb-0">Hacé Escoba</h4>
                             </div>
                             <p class="text-light opacity-75 small">
-                                Si al capturar cartas lográs limpiar completamente la mesa de golpe, hacés una <strong>Escoba</strong>. Se marca una carta boca arriba en tu montón y vale un punto extra al final.
+                                Si con una captura conseguís levantar todas las cartas de la mesa, hacés una <strong>Escoba</strong>. Cada escoba vale <strong>2 puntos</strong>, las capturas solo valen <strong>1 punto</strong>.
                             </p>
                         </div>
                         <ul class="list-unstyled small text-warning mb-0">
-                            <li>✔ No se puede hacer escoba en la última mano</li>
+                            <li>✔ Hace la mayor cantidad de escobas para sumar mas puntos.</li>
                         </ul>
                     </div>
                 </div>
-
 
                 <div class="col-md-4">
                     <div class="mesa-truco h-100 p-4 d-flex flex-column justify-content-between">
@@ -129,20 +126,18 @@
                                 <h4 class="fw-bold text-white mb-0">El Conteo Final</h4>
                             </div>
                             <p class="text-light opacity-75 small">
-                                Al terminar el mazo se contabilizan bonificaciones especiales según las cartas acumuladas en tus capturas:
+                                Cuando se termina el mazo, se cuentan las cartas capturadas y se otorgan puntos adicionales según los logros de cada jugador:
                             </p>
                         </div>
                         <ul class="list-unstyled small text-warning mb-0">
-                            <li>✔ <strong>Más cartas</strong> (1 pto) y <strong>Más oros</strong> (1 pto)</li>
-                            <li>✔ <strong>El 7 de Oros</strong> o "Siete de Velo" (1 pto)</li>
-                            <li>✔ <strong>Más setentas</strong> (las 4 cartas del 7)</li>
+                            <li>✔ <strong>Capturas:</strong> 1 punto por cada una.</li>
+                            <li>✔ <strong>Escobas:</strong> 2 puntos por cada una.</li>
                         </ul>
                     </div>
                 </div>
             </div>
         </div>
     </section>
-
 
     <!-- Banner Informativo -->
     <div class="anotador-truco text-center my-5 p-4">
@@ -151,6 +146,7 @@
             Registrate gratis en segundos para guardar tus estadísticas, acumular puntos en el ranking de la semana y armar mesas privadas con tus amigos.
         </p>
     </div>
+
     <!-- MODAL crearPartida form -->
     <div class="modal fade" id="crearPartidaModal" tabindex="-1" aria-labelledby="crearPartidaModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -166,12 +162,12 @@
                             <label for="nombrePartida" class="form-label text-light fw-bold">
                                 Nombre de la Partida:
                             </label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="nombrePartida" 
-                                   name="nombrePartida" 
-                                   placeholder="Ej: Cantina Nocturna..." 
-                                   required 
+                            <input type="text"
+                                   class="form-control"
+                                   id="nombrePartida"
+                                   name="nombrePartida"
+                                   placeholder="Ej: Cantina Nocturna..."
+                                   required
                                    maxlength="30" />
                         </div>
                     </div>

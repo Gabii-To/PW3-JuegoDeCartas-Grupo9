@@ -111,9 +111,16 @@
                             <div class="d-flex flex-column align-items-center justify-content-center w-100 gap-2">
                                 <h5 class="text-light mb-1 fs-6 d-flex flex-column align-items-center">
                                     <span>Tus capturas</span>
-                                    <span class="badge bg-secondary mt-1">
-                                        @(Model.Jugadores.FirstOrDefault(j => j.UsuarioId == miUsuarioId)?.CantidadCartasCapturadas ?? 0) cap ·
-                                        @(Model.Jugadores.FirstOrDefault(j => j.UsuarioId == miUsuarioId)?.Escobas ?? 0) esc
+                                    <span class="badge bg-secondary mt-1 marcador-estadisticas">
+                                    <span class="estadistica-capturas" title="Capturas">
+                                    <i class="bi bi-layers-fill"></i>
+                                    @(Model.Jugadores.FirstOrDefault(j => j.UsuarioId == miUsuarioId)?.Capturas ?? 0)
+                                    </span>
+
+                                    <span class="estadistica-escobas" title="Escobas">
+                                    <i class="bi bi-stars"></i>
+                                    @(Model.Jugadores.FirstOrDefault(j => j.UsuarioId == miUsuarioId)?.Escobas ?? 0)
+                                    </span>
                                     </span>
                                 </h5>
 
@@ -139,7 +146,7 @@
 
             @* Mis cartas *@
             <div id="panel-jugador" class="panel-mano-flotante">
-                <div class="container text-center">
+                <div class="w-100 text-center">
                     <div class="cartas-preview" id="mano">
                         @foreach (var carta in Model.MisCartas)
                         {
