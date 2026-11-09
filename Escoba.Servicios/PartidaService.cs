@@ -385,8 +385,12 @@ public class PartidaService
                 partida.UltimoCapturadorUsuarioId = usuarioId;
 
                 // Una escoba suma 2 puntos adicionales.
-                if (partida.CartasEnMesa.Count == 0)
+                bool esUltimaJugada = partida.MazoCartas.Cartas.Count == 0 && partida.Jugadores.All(j => j.CartasEnMano.Count == 0);
+
+                if (partida.CartasEnMesa.Count == 0 && !esUltimaJugada)
+                {
                     jugador.Escobas++;
+                }
 
                 ActualizarPuntaje(jugador);
             }
