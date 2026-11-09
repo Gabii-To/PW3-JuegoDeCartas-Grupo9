@@ -76,7 +76,7 @@
             <section class="mt-4">
                 <h5 class="text-light mb-3">
                     @(rival?.Nombre ?? "Rival")
-                    <span class="badge bg-secondary">@(rival?.CantidadCartasCapturadas ?? 0) capturas · @(rival?.Escobas ?? 0) escobas</span>
+                        <span class="badge bg-secondary">@(rival?.Capturas ?? 0) capturas · @(rival?.Escobas ?? 0) escobas</span>                
                 </h5>
                 <div class="cartas-preview">
                     @for (int i = 0; i < (rival?.CantidadCartasMano ?? 0); i++)
