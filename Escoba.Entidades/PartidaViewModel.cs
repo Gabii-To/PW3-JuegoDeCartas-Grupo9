@@ -35,5 +35,6 @@ namespace Escoba.Entidades
         public int Escobas { get; set; }
         public int CantidadCartasMano { get; set; }
         public bool EsTurnoActual { get; set; }
+        public int Capturas { get; set; }
     }
 }

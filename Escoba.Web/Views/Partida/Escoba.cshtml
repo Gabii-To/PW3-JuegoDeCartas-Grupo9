@@ -110,19 +110,24 @@
                         <div class="col-md-4 col-12 text-center">
                             <div class="d-flex flex-column align-items-center justify-content-center w-100 gap-2">
                                 <h5 class="text-light mb-1 fs-6 d-flex flex-column align-items-center">
-                                    <span>Tus capturas</span>
-                                    <span class="badge bg-secondary mt-1 marcador-estadisticas">
-                                    <span class="estadistica-capturas" title="Capturas">
-                                    <i class="bi bi-layers-fill"></i>
-                                    @(Model.Jugadores.FirstOrDefault(j => j.UsuarioId == miUsuarioId)?.Capturas ?? 0)
-                                    </span>
+    <span class="mb-2">Tus Puntos</span>
 
-                                    <span class="estadistica-escobas" title="Escobas">
-                                    <i class="bi bi-stars"></i>
-                                    @(Model.Jugadores.FirstOrDefault(j => j.UsuarioId == miUsuarioId)?.Escobas ?? 0)
-                                    </span>
-                                    </span>
-                                </h5>
+    <span class="marcador-estadisticas">
+        <span class="estadistica-item">
+            <span class="estadistica-valor">
+                @(Model.Jugadores.FirstOrDefault(j => j.UsuarioId == miUsuarioId)?.Capturas ?? 0)
+            </span>
+            <span class="estadistica-label">Capturas</span>
+        </span>
+
+        <span class="estadistica-item">
+            <span class="estadistica-valor">
+                @(Model.Jugadores.FirstOrDefault(j => j.UsuarioId == miUsuarioId)?.Escobas ?? 0)
+            </span>
+            <span class="estadistica-label">Escobas</span>
+        </span>
+    </span>
+</h5>
 
                                 @if (Model.EsMiTurno)
                                 {

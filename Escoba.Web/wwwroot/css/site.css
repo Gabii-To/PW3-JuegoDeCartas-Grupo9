@@ -684,20 +684,32 @@ footer {
 }
 
 .marcador-estadisticas {
-    display: inline-flex;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 183, 3, 0.65);
+    border-radius: 10px;
+}
+
+.estadistica-item {
+    display: flex;
     align-items: center;
-    justify-content: center;
     gap: 10px;
+    width: 100%;
 }
 
-.estadistica-capturas {
-    color: #e6bd72;
+.estadistica-valor {
+    color: #ffb703;
+    font-size: 1.35rem;
+    font-weight: 800;
+    min-width: 20px;
 }
 
-.estadistica-escobas {
-    color: #75d995;
-}
-
-.marcador-estadisticas i {
-    margin-right: 3px;
+.estadistica-label {
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 600;
 }
