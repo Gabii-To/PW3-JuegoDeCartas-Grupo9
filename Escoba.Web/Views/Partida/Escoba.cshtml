@@ -129,18 +129,28 @@
     </span>
 </h5>
 
-                                @if (Model.EsMiTurno)
-                                {
-                                    <div class="d-flex flex-column align-items-center justif-content-center gap-2 mt-2 w-100">
-                                        <button id="capturar" class="btn btn-success btn-sm px-3 py-2 fw-bold text-uppercase shadow"
-                                        disabled>Capturar (15)</button>
+@if (Model.EsMiTurno)
+{
+    <div class="d-flex flex-row flex-nowrap align-items-center justify-content-center gap-2 mt-2 w-100 botones-jugada"
+         style="flex-direction: row !important;">
 
-                                        <button id="descartar" class="btn btn-warning btn-sm px-3 py-2 fw-bold text-uppercase shadow"
-                                        disabled>Descartar</button>
-                                    </div>
+        <button id="capturar"
+                class="btn btn-success fw-bold text-uppercase shadow"
+                style="width: 130px; flex: 0 0 130px;"
+                disabled>
+            Capturar (15)
+        </button>
 
-                                    <p id="jugadaError" class="text-warning mt-1 mb-0 small text-center"></p>
-                            }
+        <button id="descartar"
+                class="btn btn-warning fw-bold text-uppercase shadow"
+                style="width: 130px; flex: 0 0 130px;"
+                disabled>
+            Descartar
+        </button>
+    </div>
+
+    <p id="jugadaError" class="text-warning mt-1 mb-0 small text-center w-100"></p>
+}
                             </div>
                         </div>
 
